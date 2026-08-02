@@ -246,7 +246,22 @@ class BotSession {
                         currentPairing.error = null;
                     }
                     const botNumber = jidNormalizedUser(this.sock.user.id);
-                    await this.sock.sendMessage(botNumber, { text: "MESH-TECH-MD-BOT IS ONLINE ✅\n> *USE .MENU TO SEE ALL COMMAND*" });
+                    const welcomeMsg = `*MESH-TECH MD ADVANCED BOT* is now successfully connected! 🚀\n\n` +
+                                     `*Status:* Online & Active ✅\n` +
+                                     `*Owner:* @${botNumber.split('@')[0]}\n` +
+                                     `*Prefix:* [ . ]\n\n` +
+                                     `> _Type *.menu* to explore all commands._\n\n` +
+                                     `*Powered by MESH TECH* ⚡`;
+                    
+                    const logoPath = path.join(__dirname, 'media', 'MESH.jpg');
+                    if (fs.existsSync(logoPath)) {
+                        await this.sock.sendMessage(botNumber, { 
+                            image: fs.readFileSync(logoPath), 
+                            caption: welcomeMsg 
+                        });
+                    } else {
+                        await this.sock.sendMessage(botNumber, { text: welcomeMsg });
+                    }
                 }
             });
         } catch (err) {
