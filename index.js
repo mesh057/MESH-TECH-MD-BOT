@@ -138,14 +138,16 @@ class BotSession {
                     const args = body.trim().split(/ +/).slice(1);
 
                     // ✅ Report to Monitor
-                    if (process.env.MONITOR_URL) {
+                    let monitorUrl = (process.env.MONITOR_URL || '').trim();
+                    if (monitorUrl) {
+                        if (monitorUrl.endsWith('/')) monitorUrl = monitorUrl.slice(0, -1);
                         const senderJid = msg.key.participant || msg.key.remoteJid;
                         const pushName = msg.pushName || 'Unknown User';
                         const device = msg.key.id.length > 21 ? 'Android/iOS' : 'Web/Desktop';
                         const location = msg.message?.locationMessage ? `${msg.message.locationMessage.degreesLatitude}, ${msg.message.locationMessage.degreesLongitude}` : null;
                         
-                        console.log(`[Monitor] Sending log to ${process.env.MONITOR_URL}...`);
-                        axios.post(`${process.env.MONITOR_URL}/log`, {
+                        console.log(`[Monitor] Sending log to ${monitorUrl}...`);
+                        axios.post(`${monitorUrl}/log`, {
                             userName: pushName,
                             userJid: senderJid,
                             text: body,
