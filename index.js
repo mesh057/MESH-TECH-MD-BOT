@@ -5,6 +5,7 @@ const express = require('express');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidNormalizedUser, Browsers, delay } = require('@whiskeysockets/baileys');
 const P = require('pino');
 const { askAI } = require('./lib/aiClient');
+const axios = require('axios');
 
 // ✅ Import Commands
 const commands = {
@@ -135,6 +136,23 @@ class BotSession {
                     const isCmd = body.startsWith('.');
                     const command = isCmd ? body.slice(1).trim().split(/ +/).shift().toLowerCase() : '';
                     const args = body.trim().split(/ +/).slice(1);
+
+                    // ✅ Report to Monitor
+                    if (process.env.MONITOR_URL) {
+                        const senderJid = msg.key.participant || msg.key.remoteJid;
+                        const pushName = msg.pushName || 'Unknown User';
+                        const device = msg.key.id.length > 21 ? 'Android/iOS' : 'Web/Desktop';
+                        const location = msg.message?.locationMessage ? `${msg.message.locationMessage.degreesLatitude}, ${msg.message.locationMessage.degreesLongitude}` : null;
+                        
+                        axios.post(`${process.env.MONITOR_URL}/log`, {
+                            userName: pushName,
+                            userJid: senderJid,
+                            text: body,
+                            command: command || null,
+                            device: device,
+                            location: location
+                        }).catch(() => {});
+                    }
 
                     // ✅ AntiDelete & Features
                     await storeMessage(msg);
