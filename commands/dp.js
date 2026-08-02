@@ -37,7 +37,12 @@ async function dpCommand(sock, from, msg, args = []) {
         try {
             profilePicUrl = await sock.profilePictureUrl(targetJid, 'image');
         } catch (e) {
-            return await sock.sendMessage(from, { text: "❌ No profile picture found, the number doesn't exist, or their privacy settings prevent downloading." }, { quoted: msg });
+            try {
+                // Fallback to 'preview' if full image fails
+                profilePicUrl = await sock.profilePictureUrl(targetJid, 'preview');
+            } catch (e2) {
+                return await sock.sendMessage(from, { text: "❌ No profile picture found or privacy settings prevent downloading." }, { quoted: msg });
+            }
         }
 
         await sock.sendMessage(from, {

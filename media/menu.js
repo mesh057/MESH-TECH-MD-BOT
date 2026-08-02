@@ -5,7 +5,7 @@ const more = String.fromCharCode(8206)
 const readMore = more.repeat(2001)
 const moment = require('moment-timezone')
 
-function getStatusBox(timezone = 'Africa/Nairobi') {
+function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0) {
     // Force Nairobi GMT+3
     const date = moment().tz('Africa/Nairobi').format('DD-MMM-YYYY')
     const time = moment().tz('Africa/Nairobi').format('hh:mm A')
@@ -26,13 +26,14 @@ function getStatusBox(timezone = 'Africa/Nairobi') {
 ┃ 🕒 𝗧𝗶𝗺𝗲: ${time}
 ┃ 📌 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀: 500+ 𝗟𝗼𝗮𝗱𝗲𝗱
 ┃ 🧠 𝗠𝗲𝗻𝘂𝘀: 16+ 𝗖𝗮𝘁𝗲𝗴𝗼𝗿𝗶𝗲𝘀
+┃ 👥 𝗨𝘀𝗲𝗿𝘀: ${userCount} Active
 ┃ 📱 𝗗𝗲𝘃𝗶𝗰𝗲: ANDROID-CORE
 ╰━━━━━━━━━━━━━━━━━━╯
 `
 }
 
-function getMenu(timezone = 'Africa/Nairobi') {
-    const statusBox = getStatusBox(timezone);
+function getMenu(timezone = 'Africa/Nairobi', userCount = 0) {
+    const statusBox = getStatusBox(timezone, userCount);
     return `
 ${statusBox}
 ╔═❖•⊰ *𝗠𝗲𝘀𝗵-𝗧𝗲𝗰𝗵 𝗠𝗱 𝗕𝗼𝘁* ⊱•❖═╗  
@@ -338,7 +339,8 @@ ${readMore}
 *『𝙄𝙛 𝙮𝙤𝙪 𝙘𝙖𝙣'𝙩 𝙝𝙖𝙣𝙙𝙡𝙚 𝙩𝙝𝙚 𝙝𝙚𝙖𝙩... 𝙙𝙤𝙣'𝙩 𝙩𝙤𝙪𝙘𝙝 𝙩𝙝𝙚 𝙛𝙞𝙧𝙚. 🔥*
 *𝙎𝙞𝙜𝙣𝙞𝙣𝙜 𝙤𝙛𝙛 𝙬𝙞𝙩𝙝 𝙖 𝙗𝙪𝗿𝗻... 𝙩𝙝𝙞𝙨 𝙞𝙨 𝗠𝗘𝗦𝗛. 🚀』* 
 ${readMore} 
-*https://github.com/mesh057/MESH-TECH-MD-BOT*
+*Fork this repo:* https://github.com/mesh057/MESH-TECH-MD-BOT/fork
+*Official Repo:* https://github.com/mesh057/MESH-TECH-MD-BOT
 `
 }
 

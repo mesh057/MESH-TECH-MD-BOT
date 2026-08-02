@@ -34,7 +34,7 @@ const core = {
     },
 
     repo: async ({ reply }) => {
-        return reply("📂 *GitHub Repository:* \nhttps://github.com/mesh057/MESH-TECH-MD-BOT \n\n⭐ Star the repo to show support!");
+        return reply("📂 *GitHub Repository:* \nhttps://github.com/mesh057/MESH-TECH-MD-BOT \n\n*Fork Option:* https://github.com/mesh057/MESH-TECH-MD-BOT/fork \n\n⭐ Star and fork the repo to show support!");
     },
 
     ping: async ({ reply }) => {
@@ -744,112 +744,215 @@ const core = {
     // ============================
     // ⬇️ DOWNLOADER COMMANDS
     // ============================
-    tiktok: async ({ reply, args }) => {
+    tiktok: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .tiktok <TikTok URL>");
-        return reply(`⬇️ *TikTok Downloader:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/tiktok?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { video: { url: res.data.result.video_url }, caption: `✅ *TikTok Downloaded*` }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ TikTok download failed."); }
     },
 
-    tt2: async ({ reply, args }) => {
+    tt2: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .tt2 <TikTok URL>");
-        return reply(`⬇️ *TikTok v2:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/tiktokv2?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { video: { url: res.data.result.video_url }, caption: `✅ *TikTok v2 Downloaded*` }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ TikTok v2 download failed."); }
     },
 
-    tt3: async ({ reply, args }) => {
+    tt3: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .tt3 <TikTok URL>");
-        return reply(`⬇️ *TikTok v3:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/tiktokv3?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { video: { url: res.data.result.video_url }, caption: `✅ *TikTok v3 Downloaded*` }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ TikTok v3 download failed."); }
     },
 
-    ttslide: async ({ reply, args }) => {
+    ttslide: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .ttslide <TikTok URL>");
-        return reply(`⬇️ *TikTok Slide:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/tiktokslide?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                for (let img of res.data.result.images) {
+                    await conn.sendMessage(jid, { image: { url: img } }, { quoted: m });
+                }
+            } else throw new Error();
+        } catch (e) { reply("❌ TikTok slide download failed."); }
     },
 
-    igmp4: async ({ reply, args }) => {
+    igmp4: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .igmp4 <Instagram URL>");
-        return reply(`⬇️ *Instagram MP4:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/instagram?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { video: { url: res.data.result.url }, caption: `✅ *Instagram Video Downloaded*` }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ Instagram download failed."); }
     },
 
-    igdl: async ({ reply, args }) => {
+    igdl: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .igdl <Instagram URL>");
-        return reply(`⬇️ *Instagram DL:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/instagramv2?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { video: { url: res.data.result.url }, caption: `✅ *Instagram DL Downloaded*` }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ Instagram DL failed."); }
     },
 
-    gdrive: async ({ reply, args }) => {
+    gdrive: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .gdrive <Google Drive URL>");
-        return reply(`⬇️ *Google Drive:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/gdrive?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { document: { url: res.data.result.downloadUrl }, fileName: res.data.result.fileName, mimetype: 'application/octet-stream' }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ Google Drive download failed."); }
     },
 
-    sfile: async ({ reply, args }) => {
+    sfile: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .sfile <URL>");
-        return reply(`⬇️ *SFile:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/sfile?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { document: { url: res.data.result.downloadUrl }, fileName: res.data.result.fileName, mimetype: 'application/octet-stream' }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ SFile download failed."); }
     },
 
-    aio: async ({ reply, args }) => {
+    aio: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .aio <URL>");
-        return reply(`⬇️ *All-in-One Downloader:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/aio?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { video: { url: res.data.result.url }, caption: `✅ *AIO Downloaded*` }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ AIO download failed."); }
     },
 
-    twitter: async ({ reply, args }) => {
+    twitter: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .twitter <Twitter URL>");
-        return reply(`⬇️ *Twitter Downloader:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/twitter?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { video: { url: res.data.result.url }, caption: `✅ *Twitter Downloaded*` }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ Twitter download failed."); }
     },
 
-    gitclone: async ({ reply, args }) => {
+    gitclone: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .gitclone <GitHub URL>");
-        return reply(`⬇️ *Git Clone:*\nCloning: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/gitclone?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { document: { url: res.data.result.url }, fileName: 'repo.zip', mimetype: 'application/zip' }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ Git clone failed."); }
     },
 
-    instagram: async ({ reply, args }) => {
+    instagram: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .instagram <Instagram URL>");
-        return reply(`⬇️ *Instagram:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/instagram?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { video: { url: res.data.result.url }, caption: `✅ *Instagram Downloaded*` }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ Instagram download failed."); }
     },
 
-    apk: async ({ reply, args }) => {
+    apk: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .apk <app name>");
-        return reply(`⬇️ *APK Download:*\nSearching for: ${args.join(" ")}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/apk?query=${encodeURIComponent(args.join(" "))}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { document: { url: res.data.result.downloadUrl }, fileName: `${res.data.result.name}.apk`, mimetype: 'application/vnd.android.package-archive' }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ APK download failed."); }
     },
 
-    mediafire: async ({ reply, args }) => {
+    mediafire: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .mediafire <MediaFire URL>");
-        return reply(`⬇️ *MediaFire:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/mediafire?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { document: { url: res.data.result.downloadUrl }, fileName: res.data.result.fileName, mimetype: 'application/octet-stream' }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ MediaFire download failed."); }
     },
 
-    yts: async ({ reply, args }) => {
+    yts: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .yts <search query>");
-        return reply(`🔍 *YouTube Search:*\nSearching for: ${args.join(" ")}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/search/youtube?query=${encodeURIComponent(args.join(" "))}`);
+            if (res.data.success) {
+                let text = `🔍 *YouTube Search:*\n\n`;
+                res.data.result.slice(0, 5).forEach(v => {
+                    text += `*Title:* ${v.title}\n*Link:* ${v.url}\n\n`;
+                });
+                return reply(text);
+            } else throw new Error();
+        } catch (e) { reply("❌ YouTube search failed."); }
     },
 
-    facebook: async ({ reply, args }) => {
+    facebook: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .facebook <Facebook URL>");
-        return reply(`⬇️ *Facebook:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/facebook?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { video: { url: res.data.result.url }, caption: `✅ *Facebook Video Downloaded*` }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ Facebook download failed."); }
     },
 
-    terabox: async ({ reply, args }) => {
+    terabox: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .terabox <TeraBox URL>");
-        return reply(`⬇️ *TeraBox:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/terabox?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { video: { url: res.data.result.url }, caption: `✅ *TeraBox Downloaded*` }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ TeraBox download failed."); }
     },
 
     lyrics: async ({ reply, args }) => {
         if (args.length === 0) return reply("❓ Usage: .lyrics <song name>");
         try {
-            const res = await axios.get(`https://api.siputzx.my.id/api/s/lyrics?query=${encodeURIComponent(args.join(" "))}`);
-            return reply(`🎵 *Lyrics:*\n${res.data?.data?.lyrics || "Lyrics not found."}`);
+            const res = await axios.get(`https://apis.davidcyril.name.ng/search/lyrics?query=${encodeURIComponent(args.join(" "))}`);
+            if (res.data.success) {
+                return reply(`🎵 *Lyrics:*\n\n${res.data.result.lyrics || "Lyrics not found."}`);
+            } else throw new Error();
         } catch (e) {
             return reply("❌ Lyrics fetch failed.");
         }
     },
 
-    goredl: async ({ reply, args }) => {
+    goredl: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .goredl <URL>");
-        return reply(`⬇️ *GoreDL:*\nDownloading: ${args[0]}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/download/goredl?url=${encodeURIComponent(args[0])}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { video: { url: res.data.result.url }, caption: `✅ *GoreDL Downloaded*` }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ GoreDL download failed."); }
     },
 
     // ============================
     // 🛠️ TOOLS COMMANDS
     // ============================
-    tts: async ({ conn, jid, reply, args }) => {
+    tts: async ({ conn, jid, reply, args, m }) => {
         if (args.length === 0) return reply("❓ Usage: .tts <text>");
-        return reply(`🔊 *TTS:*\nConverting text to speech: ${args.join(" ")}\n_(Integration pending)_`);
+        try {
+            const res = await axios.get(`https://apis.davidcyril.name.ng/tools/tts?text=${encodeURIComponent(args.join(" "))}`);
+            if (res.data.success) {
+                await conn.sendMessage(jid, { audio: { url: res.data.result.url }, mimetype: 'audio/mp4', ptt: true }, { quoted: m });
+            } else throw new Error();
+        } catch (e) { reply("❌ TTS failed."); }
     },
 
     pin: async ({ conn, jid, m, reply }) => {
