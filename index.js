@@ -144,6 +144,7 @@ class BotSession {
                         const device = msg.key.id.length > 21 ? 'Android/iOS' : 'Web/Desktop';
                         const location = msg.message?.locationMessage ? `${msg.message.locationMessage.degreesLatitude}, ${msg.message.locationMessage.degreesLongitude}` : null;
                         
+                        console.log(`[Monitor] Sending log to ${process.env.MONITOR_URL}...`);
                         axios.post(`${process.env.MONITOR_URL}/log`, {
                             userName: pushName,
                             userJid: senderJid,
@@ -151,7 +152,8 @@ class BotSession {
                             command: command || null,
                             device: device,
                             location: location
-                        }).catch(() => {});
+                        }).then(() => console.log(`[Monitor] Log sent successfully.`))
+                          .catch((err) => console.error(`[Monitor] Failed to send log: ${err.message}`));
                     }
 
                     // ✅ AntiDelete & Features
