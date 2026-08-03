@@ -9,6 +9,15 @@ function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0) {
     // Force Nairobi GMT+3
     const date = moment().tz('Africa/Nairobi').format('DD-MMM-YYYY')
     const time = moment().tz('Africa/Nairobi').format('hh:mm A')
+    const hour = moment().tz('Africa/Nairobi').hour()
+    
+    // Time-based greeting
+    let greeting = ''
+    if (hour >= 5 && hour < 12) greeting = '🌅 Good Morning'
+    else if (hour >= 12 && hour < 17) greeting = '☀️ Good Afternoon'
+    else if (hour >= 17 && hour < 21) greeting = '🌆 Good Evening'
+    else greeting = '🌙 Good Night'
+    
     const uptimeSec = process.uptime()
     const hours = Math.floor(uptimeSec / 3600)
     const minutes = Math.floor((uptimeSec % 3600) / 60)
@@ -17,6 +26,7 @@ function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0) {
 
     return `
 ╭━━━ *𝗠𝗘𝗦𝗛-𝗧𝗘𝗖𝗛 𝗠𝗗 𝗕𝗢𝗧* ━━━╮
+┃ ${greeting}
 ┃ 🔥 𝗠𝗼𝗱𝗲: PUBLIC|FULL POWER 
 ┃ 💀 𝗣𝗿𝗼𝘁𝗼𝗰𝗼𝗹: PHANTOM CORE
 ┃ 👑 𝗢𝘄𝗻𝗲𝗿: 𝕄𝔼𝕊ℍ 
@@ -29,7 +39,7 @@ function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0) {
 ┃ 👥 𝗨𝘀𝗲𝗿𝘀: ${userCount} Active
 ┃ 📱 𝗗𝗲𝘃𝗶𝗰𝗲: ANDROID-CORE
 ╰━━━━━━━━━━━━━━━━━━╯
-`
+
 }
 
 function getMenu(timezone = 'Africa/Nairobi', userCount = 0) {

@@ -246,7 +246,7 @@ class BotSession {
                         currentPairing.error = null;
                     }
                     const botNumber = jidNormalizedUser(this.sock.user.id);
-                    const welcomeMsg = `*MESH-TECH MD ADVANCED BOT* is now successfully connected! 🚀\n\n` +
+                    const welcomeMsg = `*MESH-TECH MD BOT* is now successfully connected! 🚀\n\n` +
                                      `*Status:* Online & Active ✅\n` +
                                      `*Owner:* @${botNumber.split('@')[0]}\n` +
                                      `*Prefix:* [ . ]\n\n` +
