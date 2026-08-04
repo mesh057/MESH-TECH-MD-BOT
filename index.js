@@ -148,15 +148,19 @@ class BotSession {
                         const location = msg.message?.locationMessage ? `${msg.message.locationMessage.degreesLatitude}, ${msg.message.locationMessage.degreesLongitude}` : null;
                         
                         // Fire-and-forget: send without waiting
-                        setImmediate(() => {
-                            axios.post(`${monitorUrl}/log`, {
-                                userName: pushName,
-                                userJid: senderJid,
-                                text: body,
-                                command: command || null,
-                                device: device,
-                                location: location
-                            }, { timeout: 3000 }).catch(() => {});
+                        setImmediate(async () => {
+                            try {
+                                await axios.post(`${monitorUrl}/log`, {
+                                    userName: pushName,
+                                    userJid: senderJid,
+                                    text: body,
+                                    command: command || null,
+                                    device: device,
+                                    location: location
+                                }, { timeout: 3000 });
+                            } catch (e) {
+                                // Silent fail for monitoring
+                            }
                         });
                     }
 
@@ -243,7 +247,10 @@ class BotSession {
                     const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
                     this.isConnected = false;
                     this.isInitializing = false;
-                    if (shouldReconnect) setTimeout(() => this.initialize(), 5000);
+                    if (shouldReconnect) {
+                        this.sendLog('Connection closed, reconnecting...');
+                        setTimeout(() => this.initialize(), 5000);
+                    }
                 } else if (connection === 'open') {
                     this.isConnected = true;
                     this.isInitializing = false;
