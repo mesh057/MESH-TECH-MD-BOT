@@ -54,7 +54,14 @@ async function handleJoinEvent(sock, id, participants) {
                     hour: '2-digit', minute: '2-digit', second: '2-digit',
                     hour12: true
                 });
-                finalMessage = `╭╼━≪•𝙽𝙴𝚆 𝙼𝙴𝙼𝙱𝙴𝚁•≫━╾╮\n┃𝚆𝙴𝙻𝙲𝙾𝙼𝙴: @${user} 👋\n┃Member count: #${groupMetadata.participants.length}\n┃𝚃𝙸𝙼𝙴: ${timeString}⏰\n╰━━━━━━━━━━━━━━━╯\n\n*@${user}* Welcome to *${groupName}*! 🎉\n*Group 𝙳𝙴𝚂𝙲𝚁𝙸𝙿𝚃𝙸𝙾𝙽*\n${groupDesc}\n\n> *ᴘᴏᴡᴇʀᴇᴅ ʙʏ OLD-STUDIO MD*`;
+                finalMessage = `👋 *Welcome @${user}!*\n\n` +
+                                `Thank you for joining *${groupName}*! 🤖\n\n` +
+                                `👥 *Join our community group:*\n` +
+                                `https://chat.whatsapp.com/DM1JxxnOJFp0vsTHpej89M\n\n` +
+                                `📢 *Follow our channel:*\n` +
+                                `https://whatsapp.com/channel/0029VbDeTrNEKyZ9GlUude2R\n\n` +
+                                `Type *.menu* to explore all commands!\n\n` +
+                                `*Group Description:*\n${groupDesc}`;
             }
 
             // Send text message with mentions

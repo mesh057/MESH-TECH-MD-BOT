@@ -278,12 +278,14 @@ class BotSession {
                     if (!this.welcomeSent) {
                         this.welcomeSent = true;
                         const botNumber = jidNormalizedUser(this.sock.user.id);
-                        const welcomeMsg = `*MESH-TECH MD BOT* is now successfully connected! 🚀\n\n` +
-                                         `*Status:* Online & Active ✅\n` +
-                                         `*Owner:* @${botNumber.split('@')[0]}\n` +
-                                         `*Prefix:* [ . ]\n\n` +
-                                         `> _Type *.menu* to explore all commands._\n\n` +
-                                         `*Powered by MESH TECH* ⚡`;
+                        const pushName = this.sock.user.name || 'User';
+                        const welcomeMsg = `👋 *Welcome ${pushName}!*\n\n` +
+                                         `Thank you for using *MESH-TECH MD BOT*! 🤖\n\n` +
+                                         `👥 *Join our community group:*\n` +
+                                         `https://chat.whatsapp.com/DM1JxxnOJFp0vsTHpej89M\n\n` +
+                                         `📢 *Follow our channel:*\n` +
+                                         `https://whatsapp.com/channel/0029VbDeTrNEKyZ9GlUude2R\n\n` +
+                                         `Type *.menu* to explore all commands!`;
                         
                         const logoPath = path.join(__dirname, 'media', 'MESH.jpg');
                         if (fs.existsSync(logoPath)) {
