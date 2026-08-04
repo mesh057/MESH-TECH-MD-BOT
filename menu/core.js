@@ -195,9 +195,10 @@ const core = {
         return reply(`✅ Group *${args.join(" ")}* created!`);
     },
 
-    listonline: async ({ reply, isGroup }) => {
+    listonline: async ({ reply, isGroup, botData }) => {
         if (!isGroup) return reply("🚫 This command is for groups only!");
-        return reply("🟢 *Online Members:* Feature requires presence tracking.");
+        const activeUsers = Object.keys(botData.userNames || {}).length;
+        return reply(`🟢 *Active Members:* ${activeUsers} users have interacted with the bot recently.`);
     },
 
     svcontact: async ({ conn, jid, m, reply, isGroup }) => {
@@ -239,9 +240,24 @@ const core = {
     },
 
     setpp: async ({ conn, m, reply }) => {
-        const quoted = m.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-        if (!quoted?.imageMessage) return reply("❓ Please reply to an image to set as profile picture.");
-        return reply("✅ Profile picture update initiated.");
+        const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+        const quoted = m.message?.extendedTextMessage?.contextInfo?.quotedMessage || m.message?.imageMessage;
+        if (!quoted && !m.message?.imageMessage) return reply("❓ Please reply to an image or send an image with .setpp to set as profile picture.");
+        
+        const target = quoted?.imageMessage || m.message?.imageMessage;
+        if (!target) return reply("❓ Please reply to an image to set as profile picture.");
+
+        try {
+            const stream = await downloadContentFromMessage(target, 'image');
+            let buffer = Buffer.from([]);
+            for await (const chunk of stream) {
+                buffer = Buffer.concat([buffer, chunk]);
+            }
+            await conn.updateProfilePicture(conn.user.id, buffer);
+            return reply("✅ Profile picture updated successfully!");
+        } catch (e) {
+            return reply(`❌ Failed to update profile picture: ${e.message}`);
+        }
     },
 
     getpp: async ({ conn, m, reply, args }) => {
@@ -293,18 +309,30 @@ const core = {
         return reply("🗑️ Chat clear requires manual action.");
     },
 
-    sudo: async ({ reply, args }) => {
+    sudo: async ({ reply, args, botData, saveBotData }) => {
         if (args.length === 0) return reply("❓ Usage: .sudo <number>");
-        return reply(`✅ ${args[0]} added as sudo user.`);
+        const num = args[0].replace(/\D/g, '') + "@s.whatsapp.net";
+        if (!botData.sudo) botData.sudo = {};
+        botData.sudo[num] = true;
+        saveBotData();
+        return reply(`✅ @${num.split('@')[0]} added as sudo user.`);
     },
 
-    delsudo: async ({ reply, args }) => {
+    delsudo: async ({ reply, args, botData, saveBotData }) => {
         if (args.length === 0) return reply("❓ Usage: .delsudo <number>");
-        return reply(`✅ ${args[0]} removed from sudo.`);
+        const num = args[0].replace(/\D/g, '') + "@s.whatsapp.net";
+        if (botData.sudo && botData.sudo[num]) {
+            delete botData.sudo[num];
+            saveBotData();
+            return reply(`✅ @${num.split('@')[0]} removed from sudo.`);
+        }
+        return reply("❌ User is not a sudo user.");
     },
 
-    listsudo: async ({ reply }) => {
-        return reply("📋 *Sudo Users:* None configured.");
+    listsudo: async ({ reply, botData }) => {
+        const sudoList = Object.keys(botData.sudo || {});
+        if (sudoList.length === 0) return reply("📋 *Sudo Users:* None configured.");
+        return reply(`📋 *Sudo Users:*\n\n${sudoList.map(s => `• @${s.split('@')[0]}`).join('\n')}`);
     },
 
     premium: async ({ reply, args }) => {

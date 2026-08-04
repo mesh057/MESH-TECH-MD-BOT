@@ -36,7 +36,7 @@ const DATA_FILE = './data/bot_data.json';
 fs.ensureDirSync(AUTH_DIR);
 fs.ensureDirSync('./data');
 
-let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, chatbot: {} };
+let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, chatbot: {}, autoReacts: {} };
 if (fs.existsSync(DATA_FILE)) {
     try { botData = fs.readJsonSync(DATA_FILE); } catch (e) {}
 }
@@ -128,6 +128,18 @@ class BotSession {
                 if (anu.action === 'add') await commands.welcome.handleJoinEvent(this.sock, anu.id, anu.participants).catch(() => {});
             });
 
+            // ✅ AntiCall Handler
+            this.sock.ev.on('call', async (calls) => {
+                if (botData.antiCall?.[this.userId]) {
+                    for (const call of calls) {
+                        if (call.status === 'offer') {
+                            await this.sock.rejectCall(call.id, call.from);
+                            await this.sock.sendMessage(call.from, { text: `⚠️ *Automatic Call Reject:* I don't accept calls. Please send a message instead.` });
+                        }
+                    }
+                }
+            });
+
             this.sock.ev.on('messages.upsert', async (chatUpdate) => {
                 try {
                     if (!chatUpdate || !chatUpdate.messages || !chatUpdate.messages[0]) return;
@@ -178,7 +190,38 @@ class BotSession {
 
                     // ✅ AntiDelete & Features
                     await storeMessage(msg);
-                    if (msg.message?.protocolMessage?.type === 0) await handleMessageRevocation(this.sock, msg);
+                    if (msg.message?.protocolMessage?.type === 0 && botData.antiDelete?.[this.userId]) {
+                        await handleMessageRevocation(this.sock, msg);
+                    }
+
+                    const getCachedGroupAdmins = async () => {
+                        const cacheKey = `${from}:admins`;
+                        const cached = botData.adminCache?.[cacheKey];
+                        if (cached && (Date.now() - cached.time) < 5000) return cached.data;
+                        if (!from.endsWith('@g.us')) return { isSenderAdmin: true, isBotAdmin: false };
+                        const metadata = await this.sock.groupMetadata(from);
+                        const admins = metadata.participants.filter(p => p.admin).map(p => p.id);
+                        return { isSenderAdmin: admins.includes(msg.key.participant || msg.key.remoteJid), isBotAdmin: admins.includes(jidNormalizedUser(this.sock.user.id)) };
+                    };
+
+                    // ✅ AntiLink Handler
+                    if (isCmd === false && from.endsWith('@g.us') && botData.antilinkGroups?.[from]) {
+                        const linkRegex = /chat.whatsapp.com\/|whatsapp.com\/channel\/|https?:\/\//i;
+                        if (linkRegex.test(body)) {
+                            const { isSenderAdmin, isBotAdmin } = await getCachedGroupAdmins();
+                            if (!isSenderAdmin && isBotAdmin) {
+                                await this.sock.sendMessage(from, { delete: msg.key });
+                                await this.sock.sendMessage(from, { text: `🚫 *Links are not allowed in this group!*` }, { quoted: msg });
+                            }
+                        }
+                    }
+
+                    // ✅ AutoReacts Handler
+                    if (!isCmd && botData.autoReacts?.[this.userId]) {
+                        const emojis = ['❤️', '🔥', '🙌', '👏', '✨', '⚡', '🚀', '✅'];
+                        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+                        await this.sock.sendMessage(from, { react: { text: randomEmoji, key: msg.key } }).catch(() => {});
+                    }
 
                     // ✅ Status Handler
                     if (from === 'status@broadcast') {
@@ -192,6 +235,10 @@ class BotSession {
                                 await this.sock.sendMessage('status@broadcast', {
                                     react: { text: emoji, key: msg.key }
                                 }, { statusJidList: [msg.key.participant] });
+                            }
+                            if (settings.autoDownload) {
+                                const botNumber = jidNormalizedUser(this.sock.user.id);
+                                await this.sock.sendMessage(botNumber, { forward: msg }).catch(() => {});
                             }
                         }
                     }
@@ -210,16 +257,6 @@ class BotSession {
 
                     // ✅ Command Handler
                     if (isCmd) {
-                        const getCachedGroupAdmins = async () => {
-                            const cacheKey = `${from}:admins`;
-                            const cached = botData.adminCache?.[cacheKey];
-                            if (cached && (Date.now() - cached.time) < 5000) return cached.data;
-                            if (!from.endsWith('@g.us')) return { isSenderAdmin: true, isBotAdmin: false };
-                            const metadata = await this.sock.groupMetadata(from);
-                            const admins = metadata.participants.filter(p => p.admin).map(p => p.id);
-                            return { isSenderAdmin: admins.includes(msg.key.participant || msg.key.remoteJid), isBotAdmin: admins.includes(jidNormalizedUser(this.sock.user.id)) };
-                        };
-
                         try {
                             // 🔸 Handle Expanded Menu System (500+ Commands & Banner)
                             const menuHandled = await handleMenuCommand(this, from, msg, command, args, botData, saveBotData);

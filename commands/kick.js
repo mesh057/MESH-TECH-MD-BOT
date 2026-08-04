@@ -1,8 +1,7 @@
 async function kickCommand(sock, from, msg, isSenderAdmin, isBotAdmin, botData, saveBotData, args) {
     if (!from.endsWith('@g.us')) return await sock.sendMessage(from, { text: "❌ This command can only be used in groups." }, { quoted: msg });
     if (!isSenderAdmin) return await sock.sendMessage(from, { text: "❌ Only group admins can use this command." }, { quoted: msg });
-    // Removed bot admin check to bypass the error
-    // if (!isBotAdmin) return await sock.sendMessage(from, { text: "❌ Please make the bot an admin first to use Kick." }, { quoted: msg });
+    if (!isBotAdmin) return await sock.sendMessage(from, { text: "❌ Please make the bot an admin first to use Kick." }, { quoted: msg });
 
     const messageContent = msg.message?.ephemeralMessage?.message || msg.message?.viewOnceMessage?.message || msg.message?.viewOnceMessageV2?.message || msg.message;
     const contextInfo = messageContent?.extendedTextMessage?.contextInfo;
