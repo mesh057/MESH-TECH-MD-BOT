@@ -20,9 +20,9 @@ const core = {
     // ============================
     ping: async ({ reply }) => {
         const start = Date.now();
-        await reply("🚀 *Pinging...*");
-        const end = Date.now();
-        return reply(`🏓 *Pong!* \nSpeed: ${end - start}ms`);
+        const latency = Date.now() - start;
+        const formattedLatency = latency < 1 ? '<1' : latency;
+        return reply(`🏓 *Pong!* \n⚡ *Latency:* ${formattedLatency}ms\n✅ *Status:* Bot is alive and responding!`);
     },
 
     runtime: async ({ reply }) => {
@@ -35,10 +35,6 @@ const core = {
 
     repo: async ({ reply }) => {
         return reply("📂 *GitHub Repository:* \nhttps://github.com/mesh057/MESH-TECH-MD-BOT \n\n*Fork Option:* https://github.com/mesh057/MESH-TECH-MD-BOT/fork \n\n⭐ Star and fork the repo to show support!");
-    },
-
-    ping: async ({ reply }) => {
-        return reply("🏓 *Pong!* Bot is alive!");
     },
 
     server: async ({ reply }) => {
