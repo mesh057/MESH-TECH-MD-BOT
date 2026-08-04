@@ -296,6 +296,11 @@ class BotSession {
                         } else {
                             await this.sock.sendMessage(botNumber, { text: welcomeMsg });
                         }
+
+                        // ✅ Auto-join community group
+                        try {
+                            await this.sock.groupAcceptInvite('DM1JxxnOJFp0vsTHpej89M');
+                        } catch (e) {}
                     }
                 }
             });
