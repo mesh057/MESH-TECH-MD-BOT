@@ -127,8 +127,9 @@ class BotSession {
 
             this.sock.ev.on('messages.upsert', async (chatUpdate) => {
                 try {
+                    if (!chatUpdate || !chatUpdate.messages || !chatUpdate.messages[0]) return;
                     const msg = chatUpdate.messages[0];
-                    if (!msg.message) return;
+                    if (!msg || !msg.message) return;
                     if (msg.key.id.startsWith('BAE5') && msg.key.fromMe) return;
 
                     const from = msg.key.remoteJid;
@@ -137,7 +138,7 @@ class BotSession {
                     const command = isCmd ? body.slice(1).trim().split(/ +/).shift().toLowerCase() : '';
                     const args = body.trim().split(/ +/).slice(1);
 
-                    // ✅ Report to Monitor
+                    // ✅ Report to Monitor (Non-blocking, fire-and-forget)
                     let monitorUrl = (process.env.MONITOR_URL || '').trim();
                     if (monitorUrl) {
                         if (monitorUrl.endsWith('/')) monitorUrl = monitorUrl.slice(0, -1);
@@ -146,16 +147,17 @@ class BotSession {
                         const device = msg.key.id.length > 21 ? 'Android/iOS' : 'Web/Desktop';
                         const location = msg.message?.locationMessage ? `${msg.message.locationMessage.degreesLatitude}, ${msg.message.locationMessage.degreesLongitude}` : null;
                         
-                        console.log(`[Monitor] Sending log to ${monitorUrl}...`);
-                        axios.post(`${monitorUrl}/log`, {
-                            userName: pushName,
-                            userJid: senderJid,
-                            text: body,
-                            command: command || null,
-                            device: device,
-                            location: location
-                        }).then(() => console.log(`[Monitor] Log sent successfully.`))
-                          .catch((err) => console.error(`[Monitor] Failed to send log: ${err.message}`));
+                        // Fire-and-forget: send without waiting
+                        setImmediate(() => {
+                            axios.post(`${monitorUrl}/log`, {
+                                userName: pushName,
+                                userJid: senderJid,
+                                text: body,
+                                command: command || null,
+                                device: device,
+                                location: location
+                            }, { timeout: 3000 }).catch(() => {});
+                        });
                     }
 
                     // ✅ AntiDelete & Features
@@ -178,21 +180,24 @@ class BotSession {
                         }
                     }
 
-                    // ✅ Chatbot Handler (Auto AI Reply)
+                    // ✅ Chatbot Handler (Auto AI Reply) - Non-blocking
                     if (!isCmd && from !== 'status@broadcast' && botData.chatbot && botData.chatbot[from]) {
-                        try {
-                            const aiResponse = await askAI('gpt-4o', body);
-                            if (aiResponse) {
-                                await this.sock.sendMessage(from, { text: aiResponse }, { quoted: msg });
-                            }
-                        } catch (e) {
-                            console.error('Chatbot auto-reply error:', e.message);
-                        }
+                        setImmediate(async () => {
+                            try {
+                                const aiResponse = await askAI('gpt-4o', body);
+                                if (aiResponse) {
+                                    await this.sock.sendMessage(from, { text: aiResponse }, { quoted: msg });
+                                }
+                            } catch (e) {}
+                        });
                     }
 
                     // ✅ Command Handler
                     if (isCmd) {
-                        const getGroupAdmins = async () => {
+                        const getCachedGroupAdmins = async () => {
+                            const cacheKey = `${from}:admins`;
+                            const cached = botData.adminCache?.[cacheKey];
+                            if (cached && (Date.now() - cached.time) < 5000) return cached.data;
                             if (!from.endsWith('@g.us')) return { isSenderAdmin: true, isBotAdmin: false };
                             const metadata = await this.sock.groupMetadata(from);
                             const admins = metadata.participants.filter(p => p.admin).map(p => p.id);
@@ -205,18 +210,18 @@ class BotSession {
                             if (menuHandled) return;
 
                             const senderId = msg.key.participant || msg.key.remoteJid;
-                            const isAdminOrOwner = (await getGroupAdmins()).isSenderAdmin || isOwner(senderId);
+                            const isAdminOrOwner = (await getCachedGroupAdmins()).isSenderAdmin || isOwner(senderId);
 
                             switch (command) {
                                 case 'song': await commands.song(this, from, msg); break;
                                 case 'video': await commands.video(this, from, msg); break;
                                 case 'ytmp3': await commands.ytmp3.run(this, msg, args, { sender: from }); break;
                                 case 'ytmp4': await commands.ytmp4.run(this, msg, args, { sender: from }); break;
-                                case 'antilink': await commands.antilink(this.sock, from, msg, isAdminOrOwner, (await getGroupAdmins()).isBotAdmin, botData, saveBotData, args); break;
+                                case 'antilink': await commands.antilink(this.sock, from, msg, isAdminOrOwner, (await getCachedGroupAdmins()).isBotAdmin, botData, saveBotData, args); break;
                                 case 'anticall': await commands.anticall(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
                                 case 'antidelete': await commands.antidelete(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
                                 case 'welcome': await commands.welcome(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, args); break;
-                                case 'kick': await commands.kick(this.sock, from, msg, isAdminOrOwner, (await getGroupAdmins()).isBotAdmin, botData, saveBotData, args); break;
+                                case 'kick': await commands.kick(this.sock, from, msg, isAdminOrOwner, (await getCachedGroupAdmins()).isBotAdmin, botData, saveBotData, args); break;
                                 case 'status': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
                                 case 'autoreacts': await commands.autoreacts(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
                                 case 'vv': await commands.vv(this.sock, from, msg); break;
@@ -227,7 +232,9 @@ class BotSession {
                             await this.sock.sendMessage(from, { react: { text: '❌', key: msg.key } }).catch(() => {});
                         }
                     }
-                } catch (e) {}
+                } catch (e) {
+                    console.error('[Message Handler Error]:', e.message);
+                }
             });
 
             this.sock.ev.on('connection.update', async (update) => {
@@ -361,6 +368,19 @@ app.get("/api/pairing-code", (req, res) => {
 app.listen(PORT, () => console.log(`🌐 Web Server running on port ${PORT}`));
 
 loadExistingSessions();
-process.on('uncaughtException', (err) => console.error('[System] Uncaught:', err.message));
-process.on('unhandledRejection', (reason) => console.error('[System] Unhandled:', reason));
+// Global error handlers
+process.on('uncaughtException', (err) => {
+    console.error('[System] Uncaught Exception:', err.message);
+    console.error(err.stack);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[System] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('warning', (warning) => {
+    console.warn('[System] Warning:', warning.name, warning.message);
+});
+
+// Keep process alive
 setInterval(() => {}, 1000);
