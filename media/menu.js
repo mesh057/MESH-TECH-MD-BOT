@@ -39,7 +39,7 @@ function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0) {
 ┃ 👥 𝗨𝘀𝗲𝗿𝘀: ${userCount} Active
 ┃ 📱 𝗗𝗲𝘃𝗶𝗰𝗲: ANDROID-CORE
 ╰━━━━━━━━━━━━━━━━━━╯
-
+`
 }
 
 function getMenu(timezone = 'Africa/Nairobi', userCount = 0) {
