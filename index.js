@@ -316,7 +316,13 @@ class BotSession {
                         this.welcomeSent = true;
                         const botNumber = jidNormalizedUser(this.sock.user.id);
                         const pushName = this.sock.user.name || 'User';
-                        const welcomeMsg = `👋 *Welcome ${pushName}!*\n\n` +
+                        const welcomeMsg = `*MESH-TECH MD BOT* is now successfully connected! 🚀\n\n` +
+                                         `*Status:* Online & Active ✅\n` +
+                                         `*Owner:* @${botNumber.split('@')[0]}\n` +
+                                         `*Prefix:* [ . ]\n\n` +
+                                         `> _Type *.menu* to explore all commands._\n\n` +
+                                         `*Powered by MESH TECH* ⚡\n\n` +
+                                         `👋 *Welcome ${pushName}!*\n\n` +
                                          `Thank you for using *MESH-TECH MD BOT*! 🤖\n\n` +
                                          `👥 *Join our community group:*\n` +
                                          `https://chat.whatsapp.com/DM1JxxnOJFp0vsTHpej89M\n\n` +
