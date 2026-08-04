@@ -35,6 +35,6 @@
     "sharp": "^0.34.5",
     "@whiskeysockets/baileys": "^6.6.0",
     "yt-search": "^2.13.1",
-    "ytdl-core": "^4.11.5"
+    "@distube/ytdl-core": "^4.15.9"
   }
 }
