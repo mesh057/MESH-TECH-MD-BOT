@@ -1,0 +1,8 @@
+node_modules
+sessions
+data
+.env
+.npm
+package-lock.json
+pnpm-lock.yaml
+*.log
