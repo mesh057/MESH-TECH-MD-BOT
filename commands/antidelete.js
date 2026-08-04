@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { downloadContentFromMessage, jidNormalizedUser } = require('toxic-baileys');
+const { downloadContentFromMessage, jidNormalizedUser } = require('@whiskeysockets/baileys');
 const { writeFile } = require('fs/promises');
 const moment = require('moment-timezone');
 

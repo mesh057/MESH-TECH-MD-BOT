@@ -25,7 +25,7 @@ module.exports = async function(session, from, msg) {
         
         // Download media using Baileys downloadContentFromMessage (via session helper if available, or manually)
         // In this bot, we might need to implement a download helper if not present
-        const { downloadContentFromMessage } = require('toxic-baileys');
+        const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
         const stream = await downloadContentFromMessage(messageToDownload.message.imageMessage, 'image');
         let buffer = Buffer.from([]);
         for await (const chunk of stream) {

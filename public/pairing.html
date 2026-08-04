@@ -1255,6 +1255,20 @@
             }
         });
 
+        // Terminal typing effect
+        const terminalHeader = document.querySelector('.terminal-header');
+        const headerText = " > SYSTEM INITIALIZED... READY FOR PAIRING PROTOCOL... _";
+        let i = 0;
+        function typeWriter() {
+            if (i < headerText.length) {
+                terminalHeader.textContent += headerText.charAt(i);
+                i++;
+                setTimeout(typeWriter, 50);
+            }
+        }
+        terminalHeader.textContent = "";
+        typeWriter();
+
         // Auto-focus phone input
         phoneInput.focus();
     </script>

@@ -1,4 +1,4 @@
-const { downloadContentFromMessage } = require('toxic-baileys');
+const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 
 async function vvCommand(sock, from, msg) {
     // Loading reactions
