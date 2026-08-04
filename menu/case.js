@@ -1,7 +1,7 @@
 // Clean & Readable Command Handler
 const fs = require("fs");
 const path = require("path");
-const { generateWAMessageFromContent } = require("@whiskeysockets/baileys");
+const { generateWAMessageFromContent } = require("toxic-baileys");
 const { toggleAntidelete } = require("../antidelete");
 
 // Default mode

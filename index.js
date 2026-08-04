@@ -2,7 +2,7 @@ require('dotenv').config();
 const fs = require('fs-extra');
 const path = require('path');
 const express = require('express');
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidNormalizedUser, Browsers, delay } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidNormalizedUser, Browsers, delay } = require('toxic-baileys');
 const P = require('pino');
 const { askAI } = require('./lib/aiClient');
 const axios = require('axios');
@@ -22,6 +22,8 @@ const commands = {
     welcome: require('./commands/welcome'),
     antilink: require('./commands/antilink'),
     kick: require('./commands/kick'),
+    remini: require('./commands/remini'),
+    pinterest: require('./commands/pinterest'),
 };
 
 const { storeMessage, handleMessageRevocation } = require('./commands/antidelete');
@@ -230,6 +232,8 @@ class BotSession {
                                 case 'autoreacts': await commands.autoreacts(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
                                 case 'vv': await commands.vv(this.sock, from, msg); break;
                                 case 'dp': await commands.dp(this.sock, from, msg, args); break;
+                                case 'remini': await commands.remini(this, from, msg); break;
+                                case 'pinterest': await commands.pinterest(this, from, msg); break;
                             }
                             await this.sock.sendMessage(from, { react: { text: '✅', key: msg.key } }).catch(() => {});
                         } catch (e) {
