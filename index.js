@@ -60,6 +60,7 @@ class BotSession {
         this.isInitializing = false;
         this.messageQueue = [];
         this.isProcessingQueue = false;
+        this.welcomeSent = false; // Track if welcome message was sent
     }
 
     async addToQueue(task) {
@@ -140,12 +141,21 @@ class BotSession {
                     const command = isCmd ? body.slice(1).trim().split(/ +/).shift().toLowerCase() : '';
                     const args = body.trim().split(/ +/).slice(1);
 
+                    // ✅ Track Active Users in Real-Time
+                    const senderJid = msg.key.participant || msg.key.remoteJid;
+                    const pushName = msg.pushName || 'Unknown User';
+                    if (!botData.userNames) botData.userNames = {};
+                    botData.userNames[senderJid] = {
+                        name: pushName,
+                        lastActive: Date.now(),
+                        messageCount: (botData.userNames[senderJid]?.messageCount || 0) + 1
+                    };
+                    saveBotData();
+
                     // ✅ Report to Monitor (Non-blocking, fire-and-forget)
                     let monitorUrl = (process.env.MONITOR_URL || '').trim();
                     if (monitorUrl) {
                         if (monitorUrl.endsWith('/')) monitorUrl = monitorUrl.slice(0, -1);
-                        const senderJid = msg.key.participant || msg.key.remoteJid;
-                        const pushName = msg.pushName || 'Unknown User';
                         const device = msg.key.id.length > 21 ? 'Android/iOS' : 'Web/Desktop';
                         const location = msg.message?.locationMessage ? `${msg.message.locationMessage.degreesLatitude}, ${msg.message.locationMessage.degreesLongitude}` : null;
                         
@@ -263,22 +273,27 @@ class BotSession {
                         currentPairing.code = null;
                         currentPairing.error = null;
                     }
-                    const botNumber = jidNormalizedUser(this.sock.user.id);
-                    const welcomeMsg = `*MESH-TECH MD BOT* is now successfully connected! 🚀\n\n` +
-                                     `*Status:* Online & Active ✅\n` +
-                                     `*Owner:* @${botNumber.split('@')[0]}\n` +
-                                     `*Prefix:* [ . ]\n\n` +
-                                     `> _Type *.menu* to explore all commands._\n\n` +
-                                     `*Powered by MESH TECH* ⚡`;
                     
-                    const logoPath = path.join(__dirname, 'media', 'MESH.jpg');
-                    if (fs.existsSync(logoPath)) {
-                        await this.sock.sendMessage(botNumber, { 
-                            image: fs.readFileSync(logoPath), 
-                            caption: welcomeMsg 
-                        });
-                    } else {
-                        await this.sock.sendMessage(botNumber, { text: welcomeMsg });
+                    // Only send welcome message once per session
+                    if (!this.welcomeSent) {
+                        this.welcomeSent = true;
+                        const botNumber = jidNormalizedUser(this.sock.user.id);
+                        const welcomeMsg = `*MESH-TECH MD BOT* is now successfully connected! 🚀\n\n` +
+                                         `*Status:* Online & Active ✅\n` +
+                                         `*Owner:* @${botNumber.split('@')[0]}\n` +
+                                         `*Prefix:* [ . ]\n\n` +
+                                         `> _Type *.menu* to explore all commands._\n\n` +
+                                         `*Powered by MESH TECH* ⚡`;
+                        
+                        const logoPath = path.join(__dirname, 'media', 'MESH.jpg');
+                        if (fs.existsSync(logoPath)) {
+                            await this.sock.sendMessage(botNumber, { 
+                                image: fs.readFileSync(logoPath), 
+                                caption: welcomeMsg 
+                            });
+                        } else {
+                            await this.sock.sendMessage(botNumber, { text: welcomeMsg });
+                        }
                     }
                 }
             });
