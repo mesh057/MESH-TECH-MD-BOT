@@ -145,13 +145,30 @@ class BotSession {
                     if (!chatUpdate || !chatUpdate.messages || !chatUpdate.messages[0]) return;
                     const msg = chatUpdate.messages[0];
                     if (!msg || !msg.message) return;
+                    if (!msg.key?.id || !msg.key?.remoteJid) return;
                     if (msg.key.id.startsWith('BAE5') && msg.key.fromMe) return;
 
                     const from = msg.key.remoteJid;
-                    const body = (msg.message?.conversation || msg.message?.extendedTextMessage?.text || msg.message?.imageMessage?.caption || msg.message?.videoMessage?.caption || '').trim();
-                    const isCmd = body.startsWith('.');
-                    const command = isCmd ? body.slice(1).trim().split(/ +/).shift().toLowerCase() : '';
-                    const args = body.trim().split(/ +/).slice(1);
+                    // WhatsApp may wrap incoming messages in ephemeral/view-once containers.
+                    // Unwrap them before reading text, otherwise commands appear to be ignored
+                    // in both private chats and groups.
+                    const messageContent = msg.message?.ephemeralMessage?.message ||
+                        msg.message?.viewOnceMessage?.message ||
+                        msg.message?.viewOnceMessageV2?.message ||
+                        msg.message;
+                    if (!messageContent) return;
+                    const body = (
+                        messageContent.conversation ||
+                        messageContent.extendedTextMessage?.text ||
+                        messageContent.imageMessage?.caption ||
+                        messageContent.videoMessage?.caption ||
+                        messageContent.documentMessage?.caption ||
+                        ''
+                    ).trim();
+                    const isCmd = /^\./.test(body);
+                    const commandParts = isCmd ? body.slice(1).trim().split(/\s+/) : [];
+                    const command = commandParts.shift()?.toLowerCase() || '';
+                    const args = commandParts;
 
                     // ✅ Track Active Users in Real-Time
                     const senderJid = msg.key.participant || msg.key.remoteJid;
@@ -225,16 +242,27 @@ class BotSession {
 
                     // ✅ Status Handler
                     if (from === 'status@broadcast') {
-                        const settings = botData.statusSettings[this.userId];
+                        const settings = botData.statusSettings?.[this.userId];
                         if (settings && settings.autoStatus) {
                             if (settings.autoSeen) {
-                                await this.sock.readMessages([msg.key]);
+                                await this.sock.readMessages([msg.key]).catch(() => {});
                             }
                             if (settings.autoLike) {
-                                const emoji = ['❤️', '🔥', '🙌', '👏', '✨'][Math.floor(Math.random() * 5)];
-                                await this.sock.sendMessage('status@broadcast', {
-                                    react: { text: emoji, key: msg.key }
-                                }, { statusJidList: [msg.key.participant] });
+                                const statusAuthor = msg.key.participant || msg.participant;
+                                const botJid = this.sock.user?.id ? jidNormalizedUser(this.sock.user.id) : null;
+                                // Status reactions must be sent back to status@broadcast and
+                                // include the status author plus the bot's own JID.
+                                const statusJidList = [statusAuthor, botJid]
+                                    .filter(Boolean)
+                                    .map(jidNormalizedUser);
+                                if (statusJidList.length > 0 && msg.key.id) {
+                                    const emoji = ['❤️', '🔥', '🙌', '👏', '✨'][Math.floor(Math.random() * 5)];
+                                    await this.sock.sendMessage(from, {
+                                        react: { text: emoji, key: msg.key }
+                                    }, { statusJidList }).catch((error) => {
+                                        this.sendLog(`Status auto-like failed: ${error.message}`);
+                                    });
+                                }
                             }
                             if (settings.autoDownload) {
                                 const botNumber = jidNormalizedUser(this.sock.user.id);
@@ -284,6 +312,7 @@ class BotSession {
                             }
                             await this.sock.sendMessage(from, { react: { text: '✅', key: msg.key } }).catch(() => {});
                         } catch (e) {
+                            this.sendLog(`Command .${command} failed in ${from}: ${e.message}`);
                             await this.sock.sendMessage(from, { react: { text: '❌', key: msg.key } }).catch(() => {});
                         }
                     }
