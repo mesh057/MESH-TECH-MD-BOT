@@ -34,6 +34,18 @@ async function togglePresenceFeature({ reply, args, botData, saveBotData, sender
     return reply(`${value === 'on' ? '✅' : '❌'} *${label}: ${value.toUpperCase()}*`);
 }
 
+async function forwardCommand(session, modulePath, jid, msg, args = []) {
+    if (!session) throw new Error('Active bot session is unavailable');
+    const handler = require(modulePath);
+    if (typeof handler === 'function') return handler(session, jid, msg, args);
+    if (typeof handler?.run === 'function') return handler.run(session, msg, args, { sender: jid, contextInfo: {} });
+    throw new Error(`Invalid command module: ${modulePath}`);
+}
+
+function pendingFeature(reply, command, note = 'This command is registered and ready for integration work.') {
+    return reply(`🛠️ *.${command}*\n${note}`);
+}
+
 const core = {
 
     // ============================
@@ -2285,6 +2297,68 @@ const core = {
         return reply(`✅ Demoted ${targets.length} member(s).`);
     },
 
+    // Reference aliases mapped to existing modules.
+    song: async ({ session, jid, m, args }) => forwardCommand(session, '../commands/song', jid, m, args),
+    song2: async ({ session, jid, m, args }) => forwardCommand(session, '../commands/song', jid, m, args),
+    video: async ({ session, jid, m, args }) => forwardCommand(session, '../commands/video', jid, m, args),
+    video2: async ({ session, jid, m, args }) => forwardCommand(session, '../commands/video', jid, m, args),
+    ytmp3: async ({ session, jid, m, args }) => forwardCommand(session, '../commands/ytmp3', jid, m, args),
+    ytmp4: async ({ session, jid, m, args }) => forwardCommand(session, '../commands/ytmp4', jid, m, args),
+
+    // Restored reference commands that are now callable while their external integrations are developed.
+    self: async ({ reply, botData, saveBotData, sessionId }) => {
+        botData.modes = botData.modes || {};
+        botData.modes[sessionId] = 'self';
+        saveBotData();
+        return reply('✅ Bot mode set to SELF.');
+    },
+    public: async ({ reply, botData, saveBotData, sessionId }) => {
+        botData.modes = botData.modes || {};
+        botData.modes[sessionId] = 'public';
+        saveBotData();
+        return reply('✅ Bot mode set to PUBLIC.');
+    },
+    nice: async ({ reply }) => reply('✨ Nice command received and working.'),
+    leave: async ({ reply, conn, jid, isGroup }) => {
+        if (!isGroup) return reply('❌ This command only works in groups.');
+        await conn.groupLeave(jid);
+    },
+    numinfo: async ({ reply, sender }) => reply(`📱 Number info: ${sender}`),
+    idcheck: async ({ reply, jid, sender }) => reply(`🆔 Chat: ${jid}\n👤 Sender: ${sender}`),
+    del: async ({ reply, conn, jid, m }) => {
+        const context = m.message?.extendedTextMessage?.contextInfo;
+        if (!context?.stanzaId) return reply('❓ Reply to a message with .del');
+        await conn.sendMessage(jid, { delete: { remoteJid: jid, id: context.stanzaId, participant: context.participant } });
+    },
+    insta: async ({ reply }) => pendingFeature(reply, 'insta', 'Instagram downloader integration is registered; we will connect a supported provider next.'),
+    fb: async ({ reply }) => pendingFeature(reply, 'fb', 'Facebook downloader integration is registered; we will connect a supported provider next.'),
+    img: async ({ reply }) => pendingFeature(reply, 'img', 'Image search integration is registered; we will connect a supported provider next.'),
+    antibug: async ({ reply }) => pendingFeature(reply, 'antibug', 'Anti-bug protections are registered; message-specific protections will be added next.'),
+    autogreet: async ({ reply }) => pendingFeature(reply, 'autogreet', 'Automatic greeting integration is registered; group-event customization will be added next.'),
+    autoread: async ({ reply, botData, saveBotData, sessionId, args }) => {
+        const value = args[0]?.toLowerCase();
+        if (!['on', 'off'].includes(value)) return reply('❓ Usage: .autoread on/off');
+        botData.autoRead = botData.autoRead || {};
+        botData.autoRead[sessionId] = value === 'on';
+        saveBotData();
+        return reply(`✅ Auto-read: ${value.toUpperCase()}`);
+    },
+
 };
+
+const referencePlaceholders = [
+    'add', 'open', 'close', 'tagall', 'hidetag', 'listactive', 'changename', 'closetime', 'ginfo', 'warn', 'gpp', 'promote', 'demote', 'adminkill',
+    'github', 'gitrepos', 'gitfollowers', 'gitstarred', 'gitfollow',
+    'logo', 'dccomic', 'dragonball', 'deadpool', 'blackpink', 'neonlight', 'cat',
+    'readmore', 'say', 'tte', 'calc', 'poll', 'hack', 'matrix', 'fancy', 'cpp', 'insult', 'harami', 'shapar', 'checkme',
+    'fliptext', 'smallcaps', 'zalgо', 'zalgo2', 'bubble', 'strike', 'reverse', 'mirror', 'animal',
+    'xray', 'ghostping', 'rootme', 'weather', 'art', 'wallpaper', 'gamewallpaper', 'cyber', 'gremory', 'hacker', 'hestia', 'jibril', 'rose', 'technology', 'pubg', 'freefire', 'mountain', 'islamic', 'dog', 'imgcat',
+    'kill', 'pat', 'cry', 'hug', 'kiss', 'slap', 'bite', 'baka', 'smile', 'love',
+    'tictactoe', 'rps', 'flag', 'math', 'guessnumber', 'scramble', 'riddle', 'emoji', 'joke', 'meme', 'quote', 'truthordare', 'eightball', 'roast', 'fact', 'historyfact', 'captions', 'trivia',
+    'waifu', 'neko', 'neko2', 'akiyama', 'asuna', 'ayuzawa', 'boruto', 'ana', 'cartoon', 'chiho', 'chitoge', 'cosplay', 'cosplayloli', 'cosplaysagiri', 'deidara', 'doraemon', 'elaina', 'emilia', 'erza', 'exo', 'hinata', 'husbu', 'itachi', 'itachiuchiha', 'itori', 'jsj', 'mikasa', 'nezuko', 'yumeko', 'zerotwo', 'kitsune', 'kurumi', 'blush', 'rem', 'animehug', 'animekiss', 'cuddle', 'animegirl', 'shinobu', 'megumin', 'luffy'
+];
+for (const name of referencePlaceholders) {
+    if (!core[name]) core[name] = (context) => pendingFeature(context.reply, name);
+}
 
 module.exports = core;

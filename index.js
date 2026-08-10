@@ -330,11 +330,13 @@ class BotSession {
                                 case 'welcome': await commands.welcome(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, args); break;
                                 case 'kick': await commands.kick(this.sock, from, msg, isAdminOrOwner, (await getCachedGroupAdmins()).isBotAdmin, botData, saveBotData, args); break;
                                 case 'status': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
+                                case 'autostatus': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
                                 case 'autolikestatus': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['like', ...args]); break;
                                 case 'autoviewstatus': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['seen', ...args]); break;
                                 case 'autoreplystatus': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['reply', ...args]); break;
                                 case 'alwaysonline': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['online', ...args]); break;
                                 case 'autoreacts': await commands.autoreacts(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
+                                case 'autoreact': await commands.autoreacts(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
                                 case 'vv': await commands.vv(this.sock, from, msg); break;
                                 case 'dp': await commands.dp(this.sock, from, msg, args); break;
                                 case 'remini': await commands.remini(this, from, msg); break;
