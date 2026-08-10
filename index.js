@@ -29,14 +29,14 @@ const commands = {
 const { storeMessage, handleMessageRevocation } = require('./commands/antidelete');
 const isOwner = require('./lib/isOwner');
 const { isAdmin: checkAdmin } = require('./lib/isAdmin');
-const { handleMenuCommand } = require('./lib/menuHandler');
+const { handleMenuCommand, getCommandMetrics } = require('./lib/menuHandler');
 
 const AUTH_DIR = './sessions';
 const DATA_FILE = './data/bot_data.json';
 fs.ensureDirSync(AUTH_DIR);
 fs.ensureDirSync('./data');
 
-let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, chatbot: {}, autoReacts: {} };
+let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, chatbot: {}, autoReacts: {}, presenceSettings: {} };
 if (fs.existsSync(DATA_FILE)) {
     try { botData = fs.readJsonSync(DATA_FILE); } catch (e) {}
 }
@@ -61,6 +61,7 @@ class BotSession {
         this.messageQueue = [];
         this.isProcessingQueue = false;
         this.welcomeSent = false; // Track if welcome message was sent
+        this.presenceTimer = null;
     }
 
     async addToQueue(task) {
@@ -170,6 +171,22 @@ class BotSession {
                     const command = commandParts.shift()?.toLowerCase() || '';
                     const args = commandParts;
 
+                    // Optional presence simulation for incoming chats. These are non-blocking
+                    // and never interfere with command processing.
+                    const presenceSettings = botData.presenceSettings?.[this.userId] || {};
+                    if (!isCmd && from !== 'status@broadcast' && (presenceSettings.fakeTyping || presenceSettings.fakeRecording)) {
+                        setImmediate(async () => {
+                            try {
+                                const presence = presenceSettings.fakeRecording ? 'recording' : 'composing';
+                                await this.sock.sendPresenceUpdate(presence, from);
+                                await delay(1500);
+                                await this.sock.sendPresenceUpdate('paused', from);
+                            } catch (error) {
+                                this.sendLog(`Presence simulation failed: ${error.message}`);
+                            }
+                        });
+                    }
+
                     // ✅ Track Active Users in Real-Time
                     const senderJid = msg.key.participant || msg.key.remoteJid;
                     const pushName = msg.pushName || 'Unknown User';
@@ -264,6 +281,15 @@ class BotSession {
                                     });
                                 }
                             }
+                            if (settings.autoReply) {
+                                const statusAuthor = msg.key.participant || msg.participant;
+                                const replyText = settings.replyText || '❤️ Nice status!';
+                                if (statusAuthor) {
+                                    await this.sock.sendMessage(statusAuthor, { text: replyText }, { quoted: msg }).catch((error) => {
+                                        this.sendLog(`Status auto-reply failed: ${error.message}`);
+                                    });
+                                }
+                            }
                             if (settings.autoDownload) {
                                 const botNumber = jidNormalizedUser(this.sock.user.id);
                                 await this.sock.sendMessage(botNumber, { forward: msg }).catch(() => {});
@@ -287,7 +313,7 @@ class BotSession {
                     if (isCmd) {
                         try {
                             // 🔸 Handle Expanded Menu System (500+ Commands & Banner)
-                            const menuHandled = await handleMenuCommand(this, from, msg, command, args, botData, saveBotData);
+                            const menuHandled = await handleMenuCommand(this, from, msg, command, args, botData, saveBotData, getCommandMetrics(Object.values(sessions).filter((session) => session.isConnected).length));
                             if (menuHandled) return;
 
                             const senderId = msg.key.participant || msg.key.remoteJid;
@@ -304,6 +330,10 @@ class BotSession {
                                 case 'welcome': await commands.welcome(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, args); break;
                                 case 'kick': await commands.kick(this.sock, from, msg, isAdminOrOwner, (await getCachedGroupAdmins()).isBotAdmin, botData, saveBotData, args); break;
                                 case 'status': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
+                                case 'autolikestatus': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['like', ...args]); break;
+                                case 'autoviewstatus': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['seen', ...args]); break;
+                                case 'autoreplystatus': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['reply', ...args]); break;
+                                case 'alwaysonline': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['online', ...args]); break;
                                 case 'autoreacts': await commands.autoreacts(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
                                 case 'vv': await commands.vv(this.sock, from, msg); break;
                                 case 'dp': await commands.dp(this.sock, from, msg, args); break;
@@ -327,6 +357,8 @@ class BotSession {
                     const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
                     this.isConnected = false;
                     this.isInitializing = false;
+                    clearInterval(this.presenceTimer);
+                    this.presenceTimer = null;
                     if (shouldReconnect) {
                         this.sendLog('Connection closed, reconnecting...');
                         setTimeout(() => this.initialize(), 5000);
@@ -334,6 +366,14 @@ class BotSession {
                 } else if (connection === 'open') {
                     this.isConnected = true;
                     this.isInitializing = false;
+                    const presenceSettings = botData.presenceSettings?.[this.userId];
+                    if (presenceSettings?.alwaysOnline) {
+                        await this.sock.sendPresenceUpdate('available').catch(() => {});
+                        clearInterval(this.presenceTimer);
+                        this.presenceTimer = setInterval(() => {
+                            if (this.isConnected && this.sock) this.sock.sendPresenceUpdate('available').catch(() => {});
+                        }, 30000);
+                    }
                     if (currentPairing.userId === this.userId) {
                         currentPairing.userId = null;
                         currentPairing.code = null;

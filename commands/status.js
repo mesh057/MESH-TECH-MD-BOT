@@ -10,16 +10,22 @@ const toBold = (text) => {
 async function statusCommand(sock, from, msg, isAdmin, botData, saveBotData, userId, args) {
     if (!isAdmin) return await sock.sendMessage(from, { text: "❌ Only owner can use this command." }, { quoted: msg });
     
+    if (!botData.statusSettings) botData.statusSettings = {};
     if (!botData.statusSettings[userId]) {
         botData.statusSettings[userId] = {
             autoStatus: false,
             autoSeen: false,
             autoLike: false,
+            autoReply: false,
             autoDownload: false,
+            replyText: '❤️ Nice status!',
             system: 1,
             isPublic: false
         };
     }
+    if (!botData.presenceSettings) botData.presenceSettings = {};
+    if (!botData.presenceSettings[userId]) botData.presenceSettings[userId] = { alwaysOnline: false };
+    const settings = botData.statusSettings[userId];
     
     const action = args[0]?.toLowerCase();
     
@@ -29,14 +35,18 @@ async function statusCommand(sock, from, msg, isAdmin, botData, saveBotData, use
                    `┃ ⋄ ${toBold("Auto Status:")} ${settings.autoStatus ? '✅' : '❌'}\n` +
                    `┃ ⋄ ${toBold("Auto Seen:")} ${settings.autoSeen ? '✅' : '❌'}\n` +
                    `┃ ⋄ ${toBold("Auto Like:")} ${settings.autoLike ? '✅' : '❌'}\n` +
+                   `┃ ⋄ ${toBold("Auto Reply:")} ${settings.autoReply ? '✅' : '❌'}\n` +
                    `┃ ⋄ ${toBold("Auto Download:")} ${settings.autoDownload ? '✅' : '❌'}\n` +
+                   `┃ ⋄ ${toBold("Always Online:")} ${botData.presenceSettings[userId]?.alwaysOnline ? '✅' : '❌'}\n` +
                    `┃ ⋄ ${toBold("Current System:")} ${settings.system || 1}\n` +
                    `╰━━━━━━━━━━━━━━━━━━┈⊷\n\n` +
                    `*Commands:*\n` +
                    `.status on/off - Toggle All\n` +
                    `.status seen on/off\n` +
                    `.status like on/off\n` +
+                   `.status reply on/off [text]\n` +
                    `.status download on/off\n` +
+                   `.status online on/off\n` +
                    `.status system 1/2/3`;
         return await sock.sendMessage(from, { text: menu }, { quoted: msg });
     }
@@ -45,14 +55,18 @@ async function statusCommand(sock, from, msg, isAdmin, botData, saveBotData, use
         botData.statusSettings[userId].autoStatus = true;
         botData.statusSettings[userId].autoSeen = true;
         botData.statusSettings[userId].autoLike = true;
+        botData.statusSettings[userId].autoReply = true;
         botData.statusSettings[userId].autoDownload = true;
+        botData.presenceSettings[userId].alwaysOnline = true;
         saveBotData();
         await sock.sendMessage(from, { text: "✅ *ALL STATUS FEATURES: ON*" }, { quoted: msg });
     } else if (action === 'off') {
         botData.statusSettings[userId].autoStatus = false;
         botData.statusSettings[userId].autoSeen = false;
         botData.statusSettings[userId].autoLike = false;
+        botData.statusSettings[userId].autoReply = false;
         botData.statusSettings[userId].autoDownload = false;
+        botData.presenceSettings[userId].alwaysOnline = false;
         saveBotData();
         await sock.sendMessage(from, { text: "❌ *ALL STATUS FEATURES: OFF*" }, { quoted: msg });
     } else if (action === 'seen') {
@@ -78,6 +92,35 @@ async function statusCommand(sock, from, msg, isAdmin, botData, saveBotData, use
             botData.statusSettings[userId].autoLike = false;
             saveBotData();
             await sock.sendMessage(from, { text: "❌ *Auto Like: OFF*" }, { quoted: msg });
+        }
+    } else if (action === 'reply') {
+        const val = args[1]?.toLowerCase();
+        if (val === 'on') {
+            settings.autoReply = true;
+            settings.autoStatus = true;
+            if (args.slice(2).length) settings.replyText = args.slice(2).join(' ');
+            saveBotData();
+            await sock.sendMessage(from, { text: `✅ *Auto Reply Status: ON*\n💬 ${settings.replyText}` }, { quoted: msg });
+        } else if (val === 'off') {
+            settings.autoReply = false;
+            saveBotData();
+            await sock.sendMessage(from, { text: "❌ *Auto Reply Status: OFF*" }, { quoted: msg });
+        } else {
+            await sock.sendMessage(from, { text: "❌ Usage: .status reply on/off [message]" }, { quoted: msg });
+        }
+    } else if (action === 'online') {
+        const val = args[1]?.toLowerCase();
+        if (val === 'on') {
+            botData.presenceSettings[userId].alwaysOnline = true;
+            saveBotData();
+            await sock.sendPresenceUpdate('available').catch(() => {});
+            await sock.sendMessage(from, { text: "✅ *Always Online: ON*" }, { quoted: msg });
+        } else if (val === 'off') {
+            botData.presenceSettings[userId].alwaysOnline = false;
+            saveBotData();
+            await sock.sendMessage(from, { text: "❌ *Always Online: OFF*" }, { quoted: msg });
+        } else {
+            await sock.sendMessage(from, { text: "❌ Usage: .status online on/off" }, { quoted: msg });
         }
     } else if (action === 'download') {
         const val = args[1]?.toLowerCase();

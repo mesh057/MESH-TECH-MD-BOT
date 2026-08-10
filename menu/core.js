@@ -13,6 +13,27 @@ function getRuntime() {
     return `${hours}h ${minutes}m ${seconds}s`;
 }
 
+function ensurePresenceSettings(botData, userId) {
+    if (!botData.presenceSettings) botData.presenceSettings = {};
+    if (!botData.presenceSettings[userId]) {
+        botData.presenceSettings[userId] = {
+            alwaysOnline: false,
+            fakeTyping: false,
+            fakeRecording: false
+        };
+    }
+    return botData.presenceSettings[userId];
+}
+
+async function togglePresenceFeature({ reply, args, botData, saveBotData, sender, sessionId }, feature, label) {
+    const value = args[0]?.toLowerCase();
+    const settings = ensurePresenceSettings(botData, sessionId || sender);
+    if (!['on', 'off'].includes(value)) return reply(`❓ Usage: .${feature} on/off`);
+    settings[feature] = value === 'on';
+    saveBotData();
+    return reply(`${value === 'on' ? '✅' : '❌'} *${label}: ${value.toUpperCase()}*`);
+}
+
 const core = {
 
     // ============================
@@ -31,6 +52,17 @@ const core = {
 
     alive: async ({ reply }) => {
         return reply("🔥 *MESH-TECH MD BOT IS ONLINE AND READY!* \n\nType `.menu` to see my power! 🚀");
+    },
+
+    autotyping: async (context) => togglePresenceFeature(context, 'fakeTyping', 'Fake Typing'),
+    autorecording: async (context) => togglePresenceFeature(context, 'fakeRecording', 'Fake Recording'),
+    alwaysonline: async ({ reply, args, botData, saveBotData, sender, sessionId }) => {
+        const value = args[0]?.toLowerCase();
+        const settings = ensurePresenceSettings(botData, sessionId || sender);
+        if (!['on', 'off'].includes(value)) return reply('❓ Usage: .alwaysonline on/off');
+        settings.alwaysOnline = value === 'on';
+        saveBotData();
+        return reply(`${value === 'on' ? '✅' : '❌'} *Always Online: ${value.toUpperCase()}*`);
     },
 
     repo: async ({ reply }) => {
@@ -2199,6 +2231,58 @@ const core = {
     zenitsu: async ({ reply, args }) => {
         if (!args[0]) return reply("❓ Usage: .zenitsu <number>");
         return reply(`💀 *Zenitsu:*\nSending to: ${args[0]}\n_(Bug integration pending)_`);
+    },
+
+    reactch: async (context) => core.reactchannel(context),
+
+    setname: async ({ reply, conn, jid, args, isGroup }) => {
+        if (!isGroup) return reply('❌ This command only works in groups.');
+        const name = args.join(' ').trim();
+        if (!name) return reply('❓ Usage: .setname <new group name>');
+        await conn.groupUpdateSubject(jid, name);
+        return reply(`✅ Group name changed to *${name}*`);
+    },
+
+    delaymsg: async ({ reply, args }) => {
+        const seconds = Math.max(1, Math.min(Number(args.shift()) || 3, 60));
+        const text = args.join(' ').trim() || 'Delayed message';
+        setTimeout(() => reply(text).catch(() => {}), seconds * 1000);
+        return reply(`⏳ Message scheduled for ${seconds}s from now.`);
+    },
+
+    tagadmin: async ({ reply, conn, jid, isGroup }) => {
+        if (!isGroup) return reply('❌ This command only works in groups.');
+        const metadata = await conn.groupMetadata(jid);
+        const admins = metadata.participants.filter((participant) => participant.admin).map((participant) => participant.id);
+        if (!admins.length) return reply('❌ No group admins found.');
+        return conn.sendMessage(jid, { text: '📢 Group admins:', mentions: admins });
+    },
+
+    kickall: async ({ reply, conn, jid, isGroup }) => {
+        if (!isGroup) return reply('❌ This command only works in groups.');
+        const metadata = await conn.groupMetadata(jid);
+        const ownId = conn.user?.id?.split(':')[0] || '';
+        const targets = metadata.participants.filter((participant) => !participant.admin && (!ownId || !participant.id.startsWith(ownId))).map((participant) => participant.id);
+        if (!targets.length) return reply('✅ No removable members found.');
+        await conn.groupParticipantsUpdate(jid, targets, 'remove');
+        return reply(`✅ Removed ${targets.length} non-admin member(s).`);
+    },
+
+    promoteall: async ({ reply, conn, jid, isGroup }) => {
+        if (!isGroup) return reply('❌ This command only works in groups.');
+        const metadata = await conn.groupMetadata(jid);
+        const targets = metadata.participants.filter((participant) => !participant.admin).map((participant) => participant.id);
+        if (targets.length) await conn.groupParticipantsUpdate(jid, targets, 'promote');
+        return reply(`✅ Promoted ${targets.length} member(s).`);
+    },
+
+    demoteall: async ({ reply, conn, jid, isGroup }) => {
+        if (!isGroup) return reply('❌ This command only works in groups.');
+        const metadata = await conn.groupMetadata(jid);
+        const ownId = conn.user?.id?.split(':')[0] || '';
+        const targets = metadata.participants.filter((participant) => participant.admin && (!ownId || !participant.id.startsWith(ownId))).map((participant) => participant.id);
+        if (targets.length) await conn.groupParticipantsUpdate(jid, targets, 'demote');
+        return reply(`✅ Demoted ${targets.length} member(s).`);
     },
 
 };

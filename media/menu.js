@@ -5,7 +5,7 @@ const more = String.fromCharCode(8206)
 const readMore = more.repeat(2001)
 const moment = require('moment-timezone')
 
-function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0) {
+function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0, metrics = {}) {
     // Force Nairobi GMT+3
     const date = moment().tz('Africa/Nairobi').format('DD-MMM-YYYY')
     const time = moment().tz('Africa/Nairobi').format('hh:mm A')
@@ -23,6 +23,9 @@ function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0) {
     const minutes = Math.floor((uptimeSec % 3600) / 60)
     const seconds = Math.floor(uptimeSec % 60)
     const uptimeStr = `${hours}h ${minutes}m ${seconds}s`
+    const commandsLoaded = Number.isFinite(metrics.commandsLoaded) ? metrics.commandsLoaded : 0
+    const menuCount = Number.isFinite(metrics.menuCount) ? metrics.menuCount : Object.keys(menuNames || {}).length
+    const activeBots = Number.isFinite(metrics.activeBots) ? metrics.activeBots : 0
 
     return `
 ╭━━━ *𝗠𝗘𝗦𝗛-𝗧𝗘𝗖𝗛 𝗠𝗗 𝗕𝗢𝗧* ━━━╮
@@ -34,16 +37,17 @@ function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0) {
 ┃ ⏳ 𝗨𝗽𝘁𝗶𝗺𝗲: ${uptimeStr}
 ┃ 📅 𝗗𝗮𝘁𝗲: ${date}
 ┃ 🕒 𝗧𝗶𝗺𝗲: ${time}
-┃ 📌 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀: 500+ 𝗟𝗼𝗮𝗱𝗲𝗱
-┃ 🧠 𝗠𝗲𝗻𝘂𝘀: 16+ 𝗖𝗮𝘁𝗲𝗴𝗼𝗿𝗶𝗲𝘀
+┃ 📌 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀: ${commandsLoaded} 𝗟𝗼𝗮𝗱𝗲𝗱
+┃ 🧠 𝗠𝗲𝗻𝘂𝘀: ${menuCount} 𝗖𝗮𝘁𝗲𝗴𝗼𝗿𝗶𝗲𝘀
 ┃ 👥 𝗨𝘀𝗲𝗿𝘀: ${userCount} Active
+┃ 🤖 𝗕𝗼𝘁𝘀: ${activeBots} Connected
 ┃ 📱 𝗗𝗲𝘃𝗶𝗰𝗲: ANDROID-CORE
 ╰━━━━━━━━━━━━━━━━━━╯
 `
 }
 
-function getMenu(timezone = 'Africa/Nairobi', userCount = 0) {
-    const statusBox = getStatusBox(timezone, userCount);
+function getMenu(timezone = 'Africa/Nairobi', userCount = 0, metrics = {}) {
+    const statusBox = getStatusBox(timezone, userCount, metrics);
     return `
 ${statusBox}
 ╔═❖•⊰ *𝗠𝗲𝘀𝗵-𝗧𝗲𝗰𝗵 𝗠𝗱 𝗕𝗼𝘁* ⊱•❖═╗  
@@ -117,7 +121,10 @@ ${readMore}
 ║➐ ⟿ 𝘼ｕｔｏ𝙂ｒｅｅｔ 🪼  
 ║➑ ⟿ 𝘼ｕｔｏ𝙏ｙｐｉｎｇ 🪼  
 ║➒ ⟿ 𝘼ｕｔｏｒｅｃｏｒｄｉｎｇ 🪼  
-║➓ ⟿ 𝘼ｕｔｏｒｅａｄ 🪼  
+║➓ ⟿ 𝗔𝗹𝘄𝗮𝘆𝘀𝗼𝗻𝗹𝗶𝗻𝗲 🪼
+║⓫ ⟿ 𝗔𝘂𝘁𝗼𝗹𝗶𝗸𝗲𝘀𝘁𝗮𝘁𝘂𝘀 🪼
+║⓬ ⟿ 𝗔𝘂𝘁𝗼𝘃𝗶𝗲𝘄𝘀𝘁𝗮𝘁𝘂𝘀 🪼
+║⓭ ⟿ 𝗔𝘂𝘁𝗼𝗿𝗲𝗽𝗹𝘆𝘀𝘁𝗮𝘁𝘂𝘀 🪼
 ╚═════════════════╝
 ${readMore}
 
