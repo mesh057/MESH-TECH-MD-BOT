@@ -111,7 +111,7 @@ class BotSession {
                 },
                 printQRInTerminal: false,
                 logger: P({ level: 'fatal' }),
-                browser: ["MESH-TECH", "Chrome", "1.0.0"],
+                browser: ["Ubuntu", "Chrome", "120.0.0.0"],
                 markOnlineOnConnect: true,
             });
 
