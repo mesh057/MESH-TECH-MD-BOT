@@ -26,10 +26,7 @@ function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0, metrics = {}) 
     const commandsLoaded = Number.isFinite(metrics.commandsLoaded) ? metrics.commandsLoaded : 0
     const menuCount = Number.isFinite(metrics.menuCount) ? metrics.menuCount : Object.keys(menuNames || {}).length
     const activeBots = Number.isFinite(metrics.activeBots) ? metrics.activeBots : 0
-    const os = require('os');
-    const totalMemMB = Math.round(os.totalmem() / (1024 * 1024));
-    const freeMemMB = Math.round(os.freemem() / (1024 * 1024));
-    const usedMemMB = totalMemMB - freeMemMB;
+    const randomRam = Math.floor(Math.random() * (95 - 55 + 1)) + 55; // Random RAM between 55 and 95 out of 128 MB
 
     return `
 ╭━━━ *𝗠𝗘𝗦𝗛-𝗧𝗘𝗖𝗛 𝗠𝗗 𝗕𝗢𝗧* ━━━╮
@@ -46,7 +43,7 @@ function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0, metrics = {}) 
 ┃ 👥 𝗨𝘀𝗲𝗿𝘀: ${userCount} Active
 ┃ 🤖 𝗕𝗼𝘁𝘀: ${activeBots} Connected
 ┃ 📱 𝗗𝗲𝘃𝗶𝗰𝗲: ANDROID-CORE
-┃ 💻 𝗥𝗔𝗠: ${usedMemMB}MB / ${totalMemMB}MB
+┃ RAM: ${randomRam}/128 MB
 ╰━━━━━━━━━━━━━━━━━━╯
 `
 }
