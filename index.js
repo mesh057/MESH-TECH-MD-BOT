@@ -28,6 +28,7 @@ const commands = {
 };
 
 const { storeMessage, handleMessageRevocation } = require('./commands/antidelete');
+const handleHelpReaction = require('./commands/help').handleHelpReaction;
 const isOwner = require('./lib/isOwner');
 const { isAdmin: checkAdmin } = require('./lib/isAdmin');
 const { handleMenuCommand, getCommandMetrics } = require('./lib/menuHandler');
@@ -131,6 +132,12 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
 
             this.sock.ev.on('group-participants.update', async (anu) => {
                 if (anu.action === 'add') await commands.welcome.handleJoinEvent(this.sock, anu.id, anu.participants).catch(() => {});
+            });
+
+            this.sock.ev.on('messages.reaction', async (reactions) => {
+                for (const reaction of reactions) {
+                    await handleHelpReaction(this.sock, reaction);
+                }
             });
 
             // ✅ AntiCall Handler

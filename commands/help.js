@@ -11,7 +11,8 @@ const pages = [
     // Page 1: Overview & Index
     `╭━━━〔 ${toBold("MESH-TECH MD BOT - HELP HUB")} 〕━━━┈⊷
 ┃ 👋 *Welcome to the Interactive Help Center!*
-┃ *Use .help [page number] to jump directly:*
+┃ *Use ⬅️ and ➡️ reactions below to flip pages,*
+┃ *or type .help [page number] to jump directly.*
 ┃ 
 ┃ 📄 *Page 1:* Overview & Index
 ┃ 👑 *Page 2:* Owner Menu (Admin)
@@ -24,7 +25,7 @@ const pages = [
 ┃ ☣️ *Page 9:* Tools & Utility Menu
 ┃ 🎮 *Page 10:* Games & Fun Menu
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷
-💡 *Tip:* Type *.help 2* or *.h 2* to view specific pages!`,
+💡 *Tip:* React with ⬅️ or ➡️ to turn pages!`,
 
     // Page 2: Owner Menu
     `╭━━━〔 ${toBold("1. OWNER MENU (PAGE 2/10)")} 〕━━━┈⊷
@@ -150,6 +151,9 @@ const pages = [
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`
 ];
 
+// Active help sessions store: messageId -> { pageNum, author }
+const activeHelpSessions = new Map();
+
 async function helpCommand(sock, from, msg, args) {
     let pageNum = 1;
     if (args && args[0]) {
@@ -160,9 +164,54 @@ async function helpCommand(sock, from, msg, args) {
     }
 
     const content = pages[pageNum - 1];
-    const footer = `\n📌 *Page ${pageNum} of ${pages.length}* | Type *.help [1-${pages.length}]* to navigate.`;
+    const footer = `\n📌 *Page ${pageNum} of ${pages.length}* | React ⬅️ or ➡️ to flip pages.`;
     
-    await sock.sendMessage(from, { text: content + footer }, { quoted: msg });
+    const sentMsg = await sock.sendMessage(from, { text: content + footer }, { quoted: msg });
+    
+    if (sentMsg?.key?.id) {
+        activeHelpSessions.set(sentMsg.key.id, {
+            pageNum,
+            from,
+            author: msg.key.participant || msg.key.remoteJid
+        });
+
+        // Add initial navigation reactions
+        try {
+            await sock.sendMessage(from, { react: { text: '⬅️', key: sentMsg.key } });
+            await sock.sendMessage(from, { react: { text: '➡️', key: sentMsg.key } });
+        } catch (e) {}
+    }
+}
+
+async function handleHelpReaction(sock, reaction) {
+    try {
+        const { key, text: emoji } = reaction;
+        if (!key?.id || !activeHelpSessions.has(key.id)) return;
+
+        const session = activeHelpSessions.get(key.id);
+        if (emoji !== '⬅️' && emoji !== '➡️') return;
+
+        let newPage = session.pageNum;
+        if (emoji === '➡️') {
+            newPage = newPage >= pages.length ? 1 : newPage + 1;
+        } else if (emoji === '⬅️') {
+            newPage = newPage <= 1 ? pages.length : newPage - 1;
+        }
+
+        session.pageNum = newPage;
+        activeHelpSessions.set(key.id, session);
+
+        const content = pages[newPage - 1];
+        const footer = `\n📌 *Page ${newPage} of ${pages.length}* | React ⬅️ or ➡️ to flip pages.`;
+
+        await sock.sendMessage(session.from, {
+            edit: key,
+            text: content + footer
+        });
+    } catch (e) {
+        console.error('Help reaction error:', e);
+    }
 }
 
 module.exports = helpCommand;
+module.exports.handleHelpReaction = handleHelpReaction;
