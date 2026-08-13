@@ -1153,7 +1153,8 @@
             const interval = setInterval(async () => {
                 attempts++;
                 try {
-                    const response = await fetch('/api/pairing-code');
+                    const phoneNumber = phoneInput.value.trim().replace(/[^0-9]/g, '');
+                    const response = await fetch(`/api/pairing-code?phoneNumber=${phoneNumber}`);
                     const data = await response.json();
 
                     if (data.success && data.code) {

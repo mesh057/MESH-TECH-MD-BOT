@@ -48,8 +48,8 @@ function saveBotData() {
 const sessions = {};
 const pairingCooldowns = new Map();
 
-// Tracks whichever pairing request the web dashboard is currently waiting on
-const currentPairing = { userId: null, code: null, error: null, requestedAt: null };
+// Tracks active pairing requests per user/phone number
+const activePairings = new Map();
 
 class BotSession {
     constructor(userId) {
@@ -110,15 +110,10 @@ class BotSession {
                 try {
                     let code = await this.sock.requestPairingCode(pairingNumber);
                     code = code?.match(/.{1,4}/g)?.join("-") || code;
-                    if (currentPairing.userId === this.userId) {
-                        currentPairing.code = code;
-                        currentPairing.error = null;
-                    }
+activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     this.sendLog(`Pairing code generated: ${code}`);
                 } catch (e) {
-                    if (currentPairing.userId === this.userId) {
-                        currentPairing.error = e.message;
-                    }
+                    activePairings.set(this.userId, { code: null, error: e.message, requestedAt: Date.now() });
                     this.sendLog(`Pairing failed: ${e.message}`);
                 }
             }
@@ -317,7 +312,7 @@ class BotSession {
                             if (menuHandled) return;
 
                             const senderId = msg.key.participant || msg.key.remoteJid;
-                            const isAdminOrOwner = (await getCachedGroupAdmins()).isSenderAdmin || isOwner(senderId);
+                            const isAdminOrOwner = (await getCachedGroupAdmins()).isSenderAdmin || isOwner(senderId, this);
 
                             switch (command) {
                                 case 'song': await commands.song(this, from, msg); break;
@@ -376,11 +371,7 @@ class BotSession {
                             if (this.isConnected && this.sock) this.sock.sendPresenceUpdate('available').catch(() => {});
                         }, 30000);
                     }
-                    if (currentPairing.userId === this.userId) {
-                        currentPairing.userId = null;
-                        currentPairing.code = null;
-                        currentPairing.error = null;
-                    }
+activePairings.delete(this.userId);
                     
                     // Only send welcome message once per session
                     if (!this.welcomeSent) {
@@ -488,26 +479,32 @@ app.post("/api/request-pairing", async (req, res) => {
             try { fs.removeSync(authPath); } catch (e) {}
         }
 
-        currentPairing.userId = userId;
-        currentPairing.code = null;
-        currentPairing.error = null;
-        currentPairing.requestedAt = now;
+activePairings.set(userId, { code: null, error: null, requestedAt: now });
 
         sessions[userId] = new BotSession(userId);
         sessions[userId].initialize(phoneNumber);
 
-        res.json({ success: true });
+        res.json({ success: true, phoneNumber: userId });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }
 });
 
 app.get("/api/pairing-code", (req, res) => {
-    if (currentPairing.error) {
-        return res.json({ success: false, error: currentPairing.error });
+    const raw = (req.query?.phoneNumber || '').toString();
+    const phoneNumber = raw.replace(/[^0-9]/g, '');
+    if (!phoneNumber) {
+        return res.json({ success: false, error: 'Phone number required' });
     }
-    if (currentPairing.code) {
-        return res.json({ success: true, code: currentPairing.code });
+    const pairing = activePairings.get(phoneNumber);
+    if (!pairing) {
+        return res.json({ success: false });
+    }
+    if (pairing.error) {
+        return res.json({ success: false, error: pairing.error });
+    }
+    if (pairing.code) {
+        return res.json({ success: true, code: pairing.code });
     }
     res.json({ success: false });
 });
