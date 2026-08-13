@@ -24,6 +24,7 @@ const commands = {
     kick: require('./commands/kick'),
     remini: require('./commands/remini'),
     pinterest: require('./commands/pinterest'),
+    help: require('./commands/help'),
 };
 
 const { storeMessage, handleMessageRevocation } = require('./commands/antidelete');
@@ -344,6 +345,8 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                                 case 'vv': await commands.vv(this.sock, from, msg); break;
                                 case 'dp': await commands.dp(this.sock, from, msg, args); break;
                                 case 'remini': await commands.remini(this, from, msg); break;
+                                case 'help': await commands.help(this.sock, from, msg); break;
+                                case 'h': await commands.help(this.sock, from, msg); break;
                                 case 'pinterest': await commands.pinterest(this, from, msg); break;
                             }
                             await this.sock.sendMessage(from, { react: { text: '✅', key: msg.key } }).catch(() => {});
