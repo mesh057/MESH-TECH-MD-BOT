@@ -2,6 +2,7 @@ require('dotenv').config();
 const fs = require('fs-extra');
 const path = require('path');
 const express = require('express');
+const QRCode = require('qrcode');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, jidNormalizedUser, Browsers, delay } = require('@whiskeysockets/baileys');
 const P = require('pino');
 const { askAI } = require('./lib/aiClient');
@@ -60,6 +61,7 @@ const pairingCooldowns = new Map();
 
 // Tracks active pairing requests per user/phone number
 const activePairings = new Map();
+const activeQRs = new Map();
 
 class BotSession {
     constructor(userId) {
@@ -391,7 +393,16 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
             });
 
             this.sock.ev.on('connection.update', async (update) => {
-                const { connection, lastDisconnect } = update;
+                const { connection, lastDisconnect, qr } = update;
+                if (qr) {
+                    try {
+                        const qrDataUrl = await QRCode.toDataURL(qr);
+                        activeQRs.set(this.userId, { qr: qrDataUrl, requestedAt: Date.now() });
+                        this.sendLog(`QR code generated successfully`);
+                    } catch (e) {
+                        this.sendLog(`Failed to render QR code: ${e.message}`);
+                    }
+                }
                 if (connection === 'close') {
                     const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
                     this.isConnected = false;
@@ -552,6 +563,44 @@ app.get("/api/pairing-code", (req, res) => {
         return res.json({ success: true, code: pairing.code });
     }
     res.json({ success: false });
+});
+
+app.post("/api/request-qr", async (req, res) => {
+    try {
+        const raw = (req.body?.phoneNumber || 'default_qr').toString();
+        const userId = raw.replace(/[^0-9]/g, '') || 'default_qr';
+
+        if (sessions[userId]) {
+            if (sessions[userId].sock) {
+                try { sessions[userId].sock.logout(); } catch (e) {}
+                try { sessions[userId].sock.end(); } catch (e) {}
+            }
+            delete sessions[userId];
+        }
+
+        const authPath = path.join(AUTH_DIR, userId);
+        if (fs.existsSync(authPath)) {
+            try { fs.removeSync(authPath); } catch (e) {}
+        }
+
+        activeQRs.delete(userId);
+        sessions[userId] = new BotSession(userId);
+        sessions[userId].initialize(); // Initialize without pairing number triggers QR mode
+
+        res.json({ success: true, userId });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+app.get("/api/qr-code", (req, res) => {
+    const raw = (req.query?.phoneNumber || 'default_qr').toString();
+    const userId = raw.replace(/[^0-9]/g, '') || 'default_qr';
+    const qrObj = activeQRs.get(userId);
+    if (!qrObj) {
+        return res.json({ success: false, error: 'Generating QR code, please wait...' });
+    }
+    res.json({ success: true, qr: qrObj.qr });
 });
 
 app.listen(PORT, () => console.log(`🌐 Web Server running on port ${PORT}`));

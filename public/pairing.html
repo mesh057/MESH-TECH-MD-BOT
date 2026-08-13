@@ -853,57 +853,48 @@
                     </div>
                 </div>
 
-                <!-- QR Scanner Tab -->
+                <!-- QR Scan Tab -->
                 <div id="qr" class="tab-content">
                     <div class="card">
                         <div class="card-title">
-                            <i class="fas fa-qrcode"></i> QR SCANNER
+                            <i class="fas fa-qrcode"></i> WHATSAPP QR DISPLAY
                         </div>
                         <div class="form-group">
-                            <label for="qrPhoneNumber">
-                                <i class="fas fa-mobile-alt"></i> PHONE NUMBER
+                            <label for="qrSessionId">
+                                <i class="fas fa-mobile-alt"></i> SESSION IDENTIFIER (OPTIONAL PHONE)
                             </label>
                             <input 
                                 type="tel" 
-                                id="qrPhoneNumber" 
-                                placeholder="254746844168" 
+                                id="qrSessionId" 
+                                placeholder="default_qr" 
                                 autocomplete="off"
                             >
                             <div class="phone-hint">
-                                >> AUTO-FILL FROM QR OR ENTER MANUALLY
+                                >> CLICK GENERATE QR TO LOAD LIVE WHATSAPP QR
                             </div>
                         </div>
 
-                        <div class="qr-container">
-                            <video id="qrVideo" autoplay></video>
-                            <div id="qrPlaceholder" style="padding: 40px; color: var(--text-secondary);">
-                                <i class="fas fa-qrcode" style="font-size: 48px; margin-bottom: 15px; display: block; opacity: 0.5;"></i>
-                                <p style="font-size: 12px;">CLICK "START SCANNER" TO BEGIN</p>
+                        <div class="button-group" style="margin-bottom: 20px;">
+                            <button type="button" id="generateQrBtn" onclick="requestQrCode()">
+                                <span id="qrBtnText">
+                                    <i class="fas fa-qrcode"></i> GENERATE QR CODE
+                                </span>
+                            </button>
+                        </div>
+
+                        <div class="qr-container" style="display: flex; justify-content: center; align-items: center; background: #000; padding: 15px; border: 1px solid var(--primary); min-height: 280px;">
+                            <div id="qrCodeWrapper" style="text-align: center;">
+                                <i class="fas fa-qrcode" style="font-size: 54px; color: var(--text-secondary); margin-bottom: 15px; display: block; opacity: 0.5;"></i>
+                                <p style="font-size: 12px; color: var(--text-secondary);">CLICK "GENERATE QR CODE" ABOVE</p>
                             </div>
                         </div>
 
-                        <div class="qr-controls">
-                            <button type="button" id="startQrBtn" onclick="startQrScanner()">
-                                <i class="fas fa-camera"></i> START SCANNER
-                            </button>
-                            <button type="button" id="stopQrBtn" onclick="stopQrScanner()" style="display: none;">
-                                <i class="fas fa-stop"></i> STOP SCANNER
-                            </button>
-                        </div>
-
-                        <div class="button-group" style="margin-top: 20px;">
-                            <button type="button" id="qrSubmitBtn" onclick="submitQrPairing()">
-                                <i class="fas fa-key"></i> GENERATE CODE
-                            </button>
-                        </div>
-
-                        <div id="qrResultSection" class="result-section">
-                            <div class="result-title" id="qrResultTitle"></div>
-                            <div id="qrPairingCodeDisplay"></div>
-                            <div class="result-message" id="qrResultMessage"></div>
-                            <button class="copy-btn" id="qrCopyBtn" style="display: none;">
-                                <i class="fas fa-copy"></i> COPY CODE
-                            </button>
+                        <div class="instructions" style="margin-top: 20px;">
+                            <strong><i class="fas fa-book"></i> [ SCAN INSTRUCTIONS ]</strong>
+                            >> OPEN WHATSAPP ON YOUR PHONE<br>
+                            >> NAVIGATE TO: SETTINGS → LINKED DEVICES → LINK A DEVICE<br>
+                            >> SCAN THE QR CODE DISPLAYED ABOVE<br>
+                            <strong style="margin-top: 10px; display: block; color: var(--warning);">⚠️ QR CODE REFRESHES AUTOMATICALLY</strong>
                         </div>
                     </div>
                 </div>
@@ -1272,6 +1263,56 @@
         }
         terminalHeader.textContent = "";
         typeWriter();
+
+        let qrInterval = null;
+
+        async function requestQrCode() {
+            const rawSession = document.getElementById('qrSessionId').value.trim();
+            const sessionId = rawSession ? rawSession.replace(/[^0-9]/g, '') || 'default_qr' : 'default_qr';
+            const wrapper = document.getElementById('qrCodeWrapper');
+            const btnText = document.getElementById('qrBtnText');
+
+            btnText.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GENERATING...';
+            wrapper.innerHTML = `
+                <div class="loading-spinner" style="margin: 20px auto; display: block;"></div>
+                <p style="font-size: 12px; color: var(--text-secondary);">GENERATING QR CODE...</p>
+            `;
+
+            try {
+                const res = await fetch('/api/request-qr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phoneNumber: sessionId })
+                });
+                const data = await res.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to start QR session');
+                }
+
+                btnText.innerHTML = '<i class="fas fa-qrcode"></i> REFRESH QR CODE';
+                if (qrInterval) clearInterval(qrInterval);
+
+                qrInterval = setInterval(async () => {
+                    try {
+                        const qrRes = await fetch(`/api/qr-code?phoneNumber=${sessionId}`);
+                        const qrData = await qrRes.json();
+                        if (qrData.success && qrData.qr) {
+                            wrapper.innerHTML = `
+                                <img src="${qrData.qr}" alt="WhatsApp QR Code" style="max-width: 240px; height: auto; border: 4px solid var(--primary); padding: 5px; background: #fff;">
+                                <p style="font-size: 12px; color: var(--success); margin-top: 10px;"><i class="fas fa-check-circle"></i> QR READY. SCAN WITH WHATSAPP!</p>
+                            `;
+                        }
+                    } catch (e) {}
+                }, 3000);
+
+            } catch (e) {
+                btnText.innerHTML = '<i class="fas fa-qrcode"></i> GENERATE QR CODE';
+                wrapper.innerHTML = `
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: var(--error); margin-bottom: 15px; display: block;"></i>
+                    <p style="font-size: 12px; color: var(--error);">${e.message}</p>
+                `;
+            }
+        }
 
         // Auto-focus phone input
         phoneInput.focus();
