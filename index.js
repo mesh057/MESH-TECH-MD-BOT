@@ -41,8 +41,16 @@ if (fs.existsSync(DATA_FILE)) {
     try { botData = fs.readJsonSync(DATA_FILE); } catch (e) {}
 }
 
+let saveTimeout = null;
 function saveBotData() {
-    fs.writeJsonSync(DATA_FILE, botData);
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        try {
+            fs.writeJsonSync(DATA_FILE, botData);
+        } catch (e) {
+            console.error('[System] Failed to save bot data:', e.message);
+        }
+    }, 2000); // Debounce disk writes by 2 seconds to eliminate I/O blocking
 }
 
 const sessions = {};
