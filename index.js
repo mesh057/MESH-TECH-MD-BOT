@@ -74,7 +74,7 @@ class BotSession {
         while (this.messageQueue.length > 0) {
             const task = this.messageQueue.shift();
             try { await task(); } catch (e) {}
-            await delay(500);
+            await delay(50);
         }
         this.isProcessingQueue = false;
     }
@@ -106,7 +106,7 @@ class BotSession {
             });
 
             if (pairingNumber && !state.creds.registered) {
-                await delay(3000);
+                await delay(500);
                 try {
                     let code = await this.sock.requestPairingCode(pairingNumber);
                     code = code?.match(/.{1,4}/g)?.join("-") || code;
@@ -174,7 +174,7 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                             try {
                                 const presence = presenceSettings.fakeRecording ? 'recording' : 'composing';
                                 await this.sock.sendPresenceUpdate(presence, from);
-                                await delay(1500);
+                                await delay(300);
                                 await this.sock.sendPresenceUpdate('paused', from);
                             } catch (error) {
                                 this.sendLog(`Presence simulation failed: ${error.message}`);
