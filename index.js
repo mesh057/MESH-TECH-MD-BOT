@@ -109,12 +109,12 @@ class BotSession {
                 },
                 printQRInTerminal: false,
                 logger: P({ level: 'fatal' }),
-                browser: Browsers.ubuntu('Chrome'),
+                browser: ["MESH-TECH", "Chrome", "1.0.0"],
                 markOnlineOnConnect: true,
             });
 
             if (pairingNumber && !state.creds.registered) {
-                await delay(500);
+                await delay(3000); // Increased delay for stability
                 try {
                     let code = await this.sock.requestPairingCode(pairingNumber);
                     code = code?.match(/.{1,4}/g)?.join("-") || code;
