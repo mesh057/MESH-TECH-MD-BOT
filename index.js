@@ -381,6 +381,9 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     }
 activePairings.delete(this.userId);
                     
+                    // ✅ Encryption Sync Delay: Wait for E2EE keys to stabilize
+                    await delay(5000);
+
                     // Only send welcome message once per session
                     if (!this.welcomeSent) {
                         this.welcomeSent = true;
