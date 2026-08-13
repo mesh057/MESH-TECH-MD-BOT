@@ -1,27 +1,9 @@
-name: Auto-Deploy to cPanel VPS
-
-on:
-  push:
-    branches: [ "main" ]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Notify cPanel / Deployment Webhook
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.CPANEL_VPS_HOST }}
-          username: ${{ secrets.CPANEL_VPS_USER }}
-          key: ${{ secrets.CPANEL_SSH_KEY }}
-          port: ${{ secrets.CPANEL_VPS_PORT || 22 }}
-          script: |
-            cd ~/mesh-tech-md-bot || cd ~/public_html/mesh-tech-md-bot
-            git pull origin main
-            npm install
-            pm2 restart mesh-bot || pm2 start index.js --name "mesh-bot"
-            pm2 save
-            echo "Successfully deployed latest changes from GitHub!"
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home3/tunupublsh/MESH-TECH-MD-BOT
+    - /bin/cp -R * $DEPLOYPATH
+    - cd $DEPLOYPATH
+    - npm install
+    - pm2 restart mesh-bot || pm2 start index.js --name mesh-bot
+    - pm2 save
