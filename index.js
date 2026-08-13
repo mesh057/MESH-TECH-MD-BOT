@@ -182,19 +182,14 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     const command = commandParts.shift()?.toLowerCase() || '';
                     const args = commandParts;
 
-                    // Optional presence simulation for incoming chats. These are non-blocking
-                    // and never interfere with command processing.
+                    // ✅ Auto-Presence Simulation (Always Typing / Always Recording)
                     const presenceSettings = botData.presenceSettings?.[this.userId] || {};
-                    if (!isCmd && from !== 'status@broadcast' && (presenceSettings.fakeTyping || presenceSettings.fakeRecording)) {
+                    if (from !== 'status@broadcast' && (presenceSettings.fakeTyping || presenceSettings.fakeRecording)) {
                         setImmediate(async () => {
                             try {
                                 const presence = presenceSettings.fakeRecording ? 'recording' : 'composing';
                                 await this.sock.sendPresenceUpdate(presence, from);
-                                await delay(300);
-                                await this.sock.sendPresenceUpdate('paused', from);
-                            } catch (error) {
-                                this.sendLog(`Presence simulation failed: ${error.message}`);
-                            }
+                            } catch (error) {}
                         });
                     }
 
@@ -296,7 +291,7 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                                 const statusAuthor = msg.key.participant || msg.participant;
                                 const replyText = settings.replyText || '❤️ Nice status!';
                                 if (statusAuthor) {
-                                    await this.sock.sendMessage(statusAuthor, { text: replyText }, { quoted: msg }).catch((error) => {
+                                    await this.sock.sendMessage(from, { text: replyText }, { quoted: msg, statusJidList: [statusAuthor, jidNormalizedUser(this.sock.user.id)] }).catch((error) => {
                                         this.sendLog(`Status auto-reply failed: ${error.message}`);
                                     });
                                 }
@@ -349,6 +344,34 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                                 case 'alwaysonline': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['online', ...args]); break;
                                 case 'autoreacts': await commands.autoreacts(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
                                 case 'autoreact': await commands.autoreacts(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
+                                case 'autotypings':
+                                case 'autotyping':
+                                case 'typing':
+                                    botData.presenceSettings[this.userId].fakeTyping = (args[0]?.toLowerCase() === 'on');
+                                    botData.presenceSettings[this.userId].fakeRecording = false;
+                                    saveBotData();
+                                    await this.sock.sendMessage(from, { text: `✅ *Auto Typing: ${botData.presenceSettings[this.userId].fakeTyping ? 'ON' : 'OFF'}*` }, { quoted: msg });
+                                    break;
+                                case 'autorecordings':
+                                case 'autorecording':
+                                case 'recording':
+                                    botData.presenceSettings[this.userId].fakeRecording = (args[0]?.toLowerCase() === 'on');
+                                    botData.presenceSettings[this.userId].fakeTyping = false;
+                                    saveBotData();
+                                    await this.sock.sendMessage(from, { text: `✅ *Auto Recording: ${botData.presenceSettings[this.userId].fakeRecording ? 'ON' : 'OFF'}*` }, { quoted: msg });
+                                    break;
+                                case 'alwaysonline':
+                                case 'alwayson':
+                                    const onlineVal = args[0]?.toLowerCase();
+                                    if (onlineVal === 'on' || onlineVal === 'off') {
+                                        botData.presenceSettings[this.userId].alwaysOnline = (onlineVal === 'on');
+                                        saveBotData();
+                                        if (onlineVal === 'on') await this.sock.sendPresenceUpdate('available');
+                                        await this.sock.sendMessage(from, { text: `✅ *Always Online: ${onlineVal.toUpperCase()}*` }, { quoted: msg });
+                                    } else {
+                                        await this.sock.sendMessage(from, { text: `❓ Usage: .alwaysonline on/off` }, { quoted: msg });
+                                    }
+                                    break;
                                 case 'vv': await commands.vv(this.sock, from, msg); break;
                                 case 'dp': await commands.dp(this.sock, from, msg, args); break;
                                 case 'remini': await commands.remini(this, from, msg); break;
