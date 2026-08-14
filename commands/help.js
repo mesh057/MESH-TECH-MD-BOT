@@ -9,12 +9,6 @@ const toBold = (text) => {
     return text.split('').map(c => boldChars[c] || c).join('');
 };
 
-const MARKERS = ['➊', '➋', '➌', '➍', '➎', '➏', '➐', '➑', '➒', '➓'];
-
-function numberedLine(index, command) {
-    return `║${MARKERS[index] || `${index + 1}.`} ⟿ .${command}`;
-}
-
 const pages = [
     // Page 1: How to Use
     `╭━━━〔 ${toBold("MESH-TECH MD BOT - START GUIDE")} 〕━━━┈⊷
@@ -50,105 +44,137 @@ const pages = [
 
     // Page 3: Owner Menu
     `╔═❖•⊰ 👑 *OWNER MENU* ⊱•❖═╗
-${numberedLine(0, 'self / .public - Bot mode')}
-${numberedLine(1, 'block / .unblock - User management')}
-${numberedLine(2, 'restart / .shutdown - Bot control')}
-${numberedLine(3, 'setbio / .setname / .setpp - Profile')}
-${numberedLine(4, 'join / .leave - Group control')}
-${numberedLine(5, 'broadcast - Send msg to all chats')}
-${numberedLine(6, 'kickall - Clean group members')}
-${numberedLine(7, 'del - Delete any bot message')}
-${numberedLine(8, 'save - Save any message to DM')}
+• .self — Set bot to private mode.
+• .public — Set bot to public mode.
+• .block — Block a user from using the bot.
+• .unblock — Unblock a user.
+• .restart — Restarts the bot process.
+• .shutdown — Shuts down the bot process.
+• .setbio — Set the bot WhatsApp bio.
+• .setname — Set the bot profile name.
+• .setpp — Set the bot profile picture.
+• .join — Join a group via invite link.
+• .leave — Make the bot leave a group.
+• .kickall — Remove all members from group.
+• .del — Delete any message from the bot.
+• .save — Save any message to your DM.
 ╚════════════════════╝`,
 
     // Page 4: Download Menu
     `╔═❖•⊰ 📥 *DOWNLOAD MENU* ⊱•❖═╗
-${numberedLine(0, 'video / .ytmp4 - YouTube Video')}
-${numberedLine(1, 'song / .ytmp3 / .play - Music')}
-${numberedLine(2, 'tiktok - TikTok No Watermark')}
-${numberedLine(3, 'insta - Instagram Reels/Posts')}
-${numberedLine(4, 'fb - Facebook Video Downloader')}
-${numberedLine(5, 'gitclone - Clone GitHub Repos')}
-${numberedLine(6, 'img - Google Image Search')}
-${numberedLine(7, 'apk - Android App Downloader')}
-${numberedLine(8, 'pinterest - Pinterest Media')}
+• .song — Download music from YouTube.
+• .video — Download video from YouTube.
+• .play — Search and play audio from YouTube.
+• .ytmp3 — Download YouTube audio via link.
+• .ytmp4 — Download YouTube video via link.
+• .tiktok — Download TikTok video (no WM).
+• .insta — Download Instagram Reels/Posts.
+• .fb — Download Facebook videos.
+• .gitclone — Clone a GitHub repository.
+• .img — Search for images on Google.
+• .apk — Download Android apps (APK).
+• .pinterest — Download Pinterest media.
 ╚════════════════════╝`,
 
     // Page 5: Auto Menu
     `╔═❖•⊰ 🪼 *AUTO MENU* ⊱•❖═╗
-${numberedLine(0, 'status - View/Set all automation')}
-${numberedLine(1, 'antidelete [on/off] - Recover msgs')}
-${numberedLine(2, 'antilink [on/off] - Group protection')}
-${numberedLine(3, 'anticall [on/off] - Block calls')}
-${numberedLine(4, 'autostatus [on/off] - View statuses')}
-${numberedLine(5, 'autoreact [p/g/all/off] - Reactions')}
-${numberedLine(6, 'alwaysonline [p/g/all/off] - Online')}
-${numberedLine(7, 'autotyping [p/g/all/off] - Typing')}
-${numberedLine(8, 'autorecoding [p/g/all/off] - Record')}
+• .status — View/Set all automation.
+• .antidelete — Toggle message recovery.
+• .antilink — Toggle group link protection.
+• .anticall — Toggle call blocking.
+• .autostatus — Toggle viewing statuses.
+• .autoreact — Toggle auto message reactions.
+• .alwaysonline — Toggle always online mode.
+• .autotyping — Toggle fake typing indicator.
+• .autorecording — Toggle fake recording.
 ╚════════════════════╝`,
 
     // Page 6: AI Menu
     `╔═❖•⊰ ⚡ *AI MENU* ⊱•❖═╗
-${numberedLine(0, 'ai / .chatgpt - Fast AI Chat')}
-${numberedLine(1, 'grok / .mistral - Advanced AI')}
-${numberedLine(2, 'bible / .quran - Religious AI')}
-${numberedLine(3, 'casperai - Casper Tech AI')}
-${numberedLine(4, 'imagine - AI Image Generation')}
-${numberedLine(5, 'remini - Enhance blurry images')}
-${numberedLine(6, 'chatbot [on/off] - Auto AI reply')}
+• .ai — Chat with GPT-4 AI assistant.
+• .grok — Chat with xAI Grok assistant.
+• .mistral — Chat with Mistral AI.
+• .bible — Search for verses in the Bible.
+• .quran — Search for verses in the Quran.
+• .casperai — Chat with Casper Tech AI.
+• .imagine — Generate AI images from text.
+• .remini — Enhance blurry images with AI.
+• .chatbot — Toggle automatic AI replies.
 ╚════════════════════╝`,
 
     // Page 7: Group Menu
     `╔═❖•⊰ 👥 *GROUP MENU* ⊱•❖═╗
-${numberedLine(0, 'kick / .add - Member management')}
-${numberedLine(1, 'promote / .demote - Admin control')}
-${numberedLine(2, 'open / .close - Group privacy')}
-${numberedLine(3, 'tagall / .hidetag - Mention all')}
-${numberedLine(4, 'welcome [on/off] - Welcome msg')}
-${numberedLine(5, 'ginfo - Detailed group info')}
-${numberedLine(6, 'warn - Member warning system')}
+• .kick — Remove a member from the group.
+• .add — Add a participant to the group.
+• .promote — Promote a member to admin.
+• .demote — Demote an admin to member.
+• .open — Open group for all members.
+• .close — Close group for admins only.
+• .tagall — Mention all members in group.
+• .hidetag — Mention all without visible tags.
+• .welcome — Toggle welcome messages.
+• .ginfo — Show detailed group information.
+• .warn — Give a warning to a member.
 ╚════════════════════╝`,
 
     // Page 8: Logo Menu
     `╔═❖•⊰ 🎨 *LOGO MENU* ⊱•❖═╗
-${numberedLine(0, 'fire [text] - Fire text effect')}
-${numberedLine(1, 'logo [text] - Gaming logo maker')}
-${numberedLine(2, 'glow / .glass - Glow text style')}
-${numberedLine(3, 'balloon - Foil balloon text')}
-${numberedLine(4, 'neonlight / .blackpink - Styles')}
-${numberedLine(5, 'dragonball / .thunder - Effects')}
-${numberedLine(6, 'marvel / .glitch - More styles')}
+• .fire — Generate fire-style text logo.
+• .logo — Generate professional gaming logo.
+• .glow — Generate glowing neon text logo.
+• .glass — Generate glass-style text logo.
+• .balloon — Generate foil balloon text logo.
+• .neonlight — Generate neon light text.
+• .dragonball — Generate Dragon Ball style.
+• .thunder — Generate thunder text effect.
+• .marvel — Generate Marvel logo style.
+• .glitch — Generate glitchy text effect.
 ╚════════════════════╝`,
 
     // Page 9: Tools & Utility
     `╔═❖•⊰ ☣️ *TOOLS & UTILITY* ⊱•❖═╗
-${numberedLine(0, 'sticker / .s - Image to Sticker')}
-${numberedLine(1, 'toimg / .tovideo - Convert')}
-${numberedLine(2, 'qr [text] - Generate QR code')}
-${numberedLine(3, 'ss [url] - Web Screenshot')}
-${numberedLine(4, 'ocr - Extract text from image')}
-${numberedLine(5, 'tempmail - Instant temp email')}
-${numberedLine(6, 'removebg / .enlarger - Image AI')}
-${numberedLine(7, 'shorturl / .calc - Utilities')}
-${numberedLine(8, 'weather / .trt - Info/Trans')}
+• .sticker — Convert image to sticker.
+• .toimg — Convert sticker to image.
+• .tovideo — Convert sticker/GIF to video.
+• .qr — Generate or read QR codes.
+• .ss — Take a screenshot of a website.
+• .ocr — Extract text from an image.
+• .tempmail — Generate a temporary email.
+• .removebg — Remove background from image.
+• .shorturl — Shorten a long URL link.
+• .calc — Perform math calculations.
+• .weather — Check current weather info.
+• .trt — Translate text between languages.
 ╚════════════════════╝`,
 
     // Page 10: Games & Fun
     `╔═❖•⊰ 🎮 *GAMES & FUN* ⊱•❖═╗
-${numberedLine(0, 'tictactoe - Play with friends')}
-${numberedLine(1, 'truth / .dare - Party game')}
-${numberedLine(2, 'joke / .fact - Fun content')}
-${numberedLine(3, 'ship / .hack / .matrix - Effects')}
+• .tictactoe — Play TicTacToe with friends.
+• .truth — Get a random truth question.
+• .dare — Get a random dare challenge.
+• .joke — Get a random funny joke.
+• .fact — Get a random interesting fact.
+• .ship — Check love compatibility.
+• .hack — Simulate a "hacking" effect.
+• .matrix — Generate matrix text effect.
 ╚════════════════════╝`,
 
     // Page 11: Anime Menu
     `╔═❖•⊰ 🎌 *ANIME MENU* ⊱•❖═╗
-${numberedLine(0, 'waifu / .neko - Anime girls')}
-${numberedLine(1, 'shinobu / .megumin - Characters')}
-${numberedLine(2, 'hug / .kiss / .slap - Reactions')}
-${numberedLine(3, 'cry / .dance / .smile - Actions')}
-${numberedLine(4, 'husbu / .kitsune - Boys/Fox')}
-${numberedLine(5, 'luffy / .zoro - One Piece')}
+• .waifu — Get random waifu anime picture.
+• .neko — Get random neko anime picture.
+• .shinobu — Get random shinobu picture.
+• .megumin — Get random megumin picture.
+• .hug — Send a hug reaction.
+• .kiss — Send a kiss reaction.
+• .slap — Send a slap reaction.
+• .cry — Send a crying reaction.
+• .dance — Send a dancing reaction.
+• .smile — Send a smiling reaction.
+• .husbu — Get random husbu picture.
+• .kitsune — Get random kitsune picture.
+• .luffy — Get random luffy picture.
+• .zoro — Get random zoro picture.
 ╚════════════════════╝`
 ];
 
