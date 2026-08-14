@@ -54,6 +54,21 @@
       "description": "Set to 'true' to automatically reject WhatsApp calls by default.",
       "value": "false",
       "required": false
+    },
+    "AUTO_REACT": {
+      "description": "Set to 'true' to automatically react to every message by default.",
+      "value": "false",
+      "required": false
+    },
+    "READ_MESSAGE": {
+      "description": "Set to 'true' to automatically mark all messages as read by default.",
+      "value": "false",
+      "required": false
+    },
+    "ANTI_BAD": {
+      "description": "Set to 'true' to automatically delete messages with bad words by default.",
+      "value": "false",
+      "required": false
     }
   },
   "buildpacks": [

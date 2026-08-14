@@ -172,6 +172,17 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
             if (botData.antiCall[this.userId] === undefined) {
                 botData.antiCall[this.userId] = process.env.ANTI_CALL === 'true';
             }
+            if (botData.autoReacts[this.userId] === undefined) {
+                botData.autoReacts[this.userId] = process.env.AUTO_REACT === 'true';
+            }
+            if (botData.readMessages === undefined) botData.readMessages = {};
+            if (botData.readMessages[this.userId] === undefined) {
+                botData.readMessages[this.userId] = process.env.READ_MESSAGE === 'true';
+            }
+            if (botData.antiBad === undefined) botData.antiBad = {};
+            if (botData.antiBad[this.userId] === undefined) {
+                botData.antiBad[this.userId] = process.env.ANTI_BAD === 'true';
+            }
             saveBotData();
 
             this.sock.ev.on('group-participants.update', async (anu) => {
@@ -283,6 +294,24 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     await storeMessage(msg);
                     if (msg.message?.protocolMessage?.type === 0 && botData.antiDelete?.[this.userId]) {
                         await handleMessageRevocation(this.sock, msg);
+                    }
+
+                    // ✅ Auto Read Message
+                    if (botData.readMessages?.[this.userId] && !msg.key.fromMe) {
+                        await this.sock.readMessages([msg.key]).catch(() => {});
+                    }
+
+                    // ✅ AntiBad (Banned Words) Handler
+                    if (botData.antiBad?.[this.userId] && !msg.key.fromMe && body) {
+                        const badWords = ['fuck', 'bitch', 'asshole', 'pussy', 'dick', 'bastard', 'stfu', 'scam', 'fraud'];
+                        const hasBadWord = badWords.some(word => body.toLowerCase().includes(word));
+                        if (hasBadWord) {
+                            const { isSenderAdmin, isBotAdmin } = await getCachedGroupAdmins();
+                            if (!isSenderAdmin && isBotAdmin && from.endsWith('@g.us')) {
+                                await this.sock.sendMessage(from, { delete: msg.key });
+                                await this.sock.sendMessage(from, { text: `🚫 @${senderId.split('@')[0]}, your message was deleted for using banned words.`, mentions: [senderId] });
+                            }
+                        }
                     }
 
                     const getCachedGroupAdmins = async () => {
