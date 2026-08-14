@@ -4,7 +4,7 @@ const { downloadContentFromMessage, jidNormalizedUser } = require('@whiskeysocke
 const { writeFile } = require('fs/promises');
 const moment = require('moment-timezone');
 
-const REPORT_TZ = 'Africa/Nairobi'; // same timezone the rest of the bot uses
+const REPORT_TZ = 'Africa/Nairobi';
 const nowStamp = () => moment().tz(REPORT_TZ).format('DD-MMM-YYYY hh:mm:ss A');
 
 const messageStore = new Map();
@@ -27,36 +27,35 @@ if (!fs.existsSync(TEMP_MEDIA_DIR)) {
 async function handleAntideleteCommand(sock, chatId, message, isAdmin, botData, saveBotData, userId, args) {
     if (!isAdmin) return await sock.sendMessage(chatId, { text: "❌ Only owner can use this command." }, { quoted: message });
     
-    const match = args[0]?.toLowerCase();
+    const mode = args[0]?.toLowerCase();
+    const currentMode = botData.antiDelete[userId] || 'off';
 
-    if (!match) {
+    if (!mode || !['on', 'off', 'p', 'g', 'all'].includes(mode)) {
         return sock.sendMessage(chatId, {
             text: `╭━━━〔 ${toBold("ANTI-DELETE SETUP")} 〕━━━┈⊷\n` +
-                   `┃ ⋄ ${toBold("Status:")} ${botData.antiDelete[userId] ? '✅ Enabled' : '❌ Disabled'}\n` +
+                   `┃ ⋄ ${toBold("Status:")} ${currentMode === 'off' ? '❌ Disabled' : '✅ Active (' + currentMode.toUpperCase() + ')'}\n` +
                    `┃\n` +
-                   `┃ ⋄ ${toBold(".antidelete on")} - Enable\n` +
+                   `┃ ⋄ ${toBold(".antidelete p")} - Private DMs only\n` +
+                   `┃ ⋄ ${toBold(".antidelete g")} - Groups only\n` +
+                   `┃ ⋄ ${toBold(".antidelete all")} - Everywhere\n` +
                    `┃ ⋄ ${toBold(".antidelete off")} - Disable\n` +
                    `╰━━━━━━━━━━━━━━━━━━┈⊷`
         }, {quoted: message});
     }
 
-    if (match === 'on') {
-        botData.antiDelete[userId] = true;
-    } else if (match === 'off') {
-        botData.antiDelete[userId] = false;
-    } else {
-        return sock.sendMessage(chatId, { text: '*Invalid command. Use .antidelete to see usage.*' }, {quoted:message});
-    }
-
+    let setMode = mode;
+    if (mode === 'on') setMode = 'all';
+    
+    botData.antiDelete[userId] = setMode;
     saveBotData();
-    return sock.sendMessage(chatId, { text: `*Antidelete ${match === 'on' ? 'enabled' : 'disabled'}*` }, {quoted:message});
+    
+    const label = setMode === 'all' ? 'Everywhere' : (setMode === 'p' ? 'Private DMs' : (setMode === 'g' ? 'Groups' : 'OFF'));
+    return sock.sendMessage(chatId, { text: `✅ *Antidelete set to: ${label}*` }, {quoted:message});
 }
 
 async function storeMessage(message) {
     try {
         if (!message.key?.id) return;
-        
-        // Don't store protocol messages
         if (message.message?.protocolMessage) return;
 
         const messageId = message.key.id;
@@ -78,21 +77,18 @@ async function storeMessage(message) {
             content = msg.extendedTextMessage.text;
         } else {
             const downloadMedia = async (msgContent, type, ext) => {
-            try {
-                const stream = await downloadContentFromMessage(msgContent, type);
-                let buffer = Buffer.from([]);
-                for await (const chunk of stream) {
-                    buffer = Buffer.concat([buffer, chunk]);
-                    if (buffer.length > 50 * 1024 * 1024) break; // 50MB limit
-                }
-                const p = path.join(TEMP_MEDIA_DIR, `${messageId}.${ext}`);
-                await writeFile(p, buffer);
-                return p;
-            } catch (e) { 
-                console.error(`Antidelete download error (${type}):`, e.message); 
-                return '';
-            }
-        };
+                try {
+                    const stream = await downloadContentFromMessage(msgContent, type);
+                    let buffer = Buffer.from([]);
+                    for await (const chunk of stream) {
+                        buffer = Buffer.concat([buffer, chunk]);
+                        if (buffer.length > 50 * 1024 * 1024) break;
+                    }
+                    const p = path.join(TEMP_MEDIA_DIR, `${messageId}.${ext}`);
+                    await writeFile(p, buffer);
+                    return p;
+                } catch (e) { return ''; }
+            };
 
             if (msg.imageMessage) {
                 mediaType = 'image';
@@ -116,12 +112,7 @@ async function storeMessage(message) {
             messageStore.delete(firstKey);
         }
 
-        // message.messageTimestamp is WhatsApp's own send time (seconds since epoch) —
-        // more accurate than capturing Date.now() here, which only reflects when
-        // this bot instance happened to process the event.
-        const sentAtMs = message.messageTimestamp
-            ? Number(message.messageTimestamp) * 1000
-            : Date.now();
+        const sentAtMs = message.messageTimestamp ? Number(message.messageTimestamp) * 1000 : Date.now();
 
         messageStore.set(messageId, {
             content,
@@ -137,7 +128,7 @@ async function storeMessage(message) {
 async function handleMessageRevocation(sock, message) {
     try {
         const protocolMsg = message.message?.protocolMessage;
-        if (!protocolMsg || protocolMsg.type !== 0) return; // 0 is REVOKE
+        if (!protocolMsg || protocolMsg.type !== 0) return;
 
         const messageId = protocolMsg.key.id;
         const original = messageStore.get(messageId);
@@ -164,7 +155,6 @@ async function handleMessageRevocation(sock, message) {
             report += `📝 ${toBold("Message Content:")}\n${original.content}`;
         }
 
-        // Send report to bot owner's DM
         await sock.sendMessage(botOwner, { text: report, mentions: [sender] });
 
         if (original.mediaType && fs.existsSync(original.mediaPath)) {
@@ -179,9 +169,7 @@ async function handleMessageRevocation(sock, message) {
             }, 5000);
         }
         messageStore.delete(messageId);
-    } catch (err) {
-        console.error('Antidelete revocation error:', err);
-    }
+    } catch (err) {}
 }
 
 module.exports = handleAntideleteCommand;
