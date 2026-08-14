@@ -408,15 +408,17 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                         });
                     }
 
-                    // ✅ AntiDelete & Features
-                    await storeMessage(msg);
-                    if (msg.message?.protocolMessage?.type === 0 && shouldRun(botData.antiDelete?.[this.userId], isGroup)) {
-                        await handleMessageRevocation(this.sock, msg);
+                    // ✅ AntiDelete & Features (Optimized: only store if enabled)
+                    if (shouldRun(botData.antiDelete?.[this.userId], isGroup)) {
+                        await storeMessage(msg);
+                        if (msg.message?.protocolMessage?.type === 0) {
+                            await handleMessageRevocation(this.sock, msg);
+                        }
                     }
 
-                    // ✅ Auto Read Message
+                    // ✅ Auto Read Message (Non-blocking)
                     if (shouldRun(botData.readMessages?.[this.userId], isGroup) && !msg.key.fromMe) {
-                        await this.sock.readMessages([msg.key]).catch(() => {});
+                        this.sock.readMessages([msg.key]).catch(() => {});
                     }
 
                     // ✅ AntiBad (Banned Words) Handler
@@ -784,6 +786,14 @@ app.post("/api/restore-session", async (req, res) => {
             return res.status(400).json({ success: false, error: 'Phone number and session ID are required.' });
         }
 
+        // 1. First destroy existing session to prevent logout() from wiping new credentials
+        if (sessions[phoneNumber]) {
+            sessions[phoneNumber].destroy();
+            delete sessions[phoneNumber];
+            // Small delay to ensure socket closure and file cleanup
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
         const authDir = path.join(AUTH_DIR, phoneNumber);
         fs.ensureDirSync(authDir);
 
@@ -806,11 +816,6 @@ app.post("/api/restore-session", async (req, res) => {
             }
         } catch (e) {
             fs.writeFileSync(path.join(authDir, 'creds.json'), rawJson);
-        }
-
-        if (sessions[phoneNumber]) {
-            sessions[phoneNumber].destroy();
-            delete sessions[phoneNumber];
         }
 
         sessions[phoneNumber] = new BotSession(phoneNumber);
