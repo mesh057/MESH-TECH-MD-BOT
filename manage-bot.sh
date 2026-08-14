@@ -28,7 +28,7 @@ show_help() {
 case "$1" in
     start)
         echo "🚀 Starting $BOT_NAME..."
-        pm2 start index.js --name "$BOT_NAME" --watch --ignore-watch="node_modules sessions data tmp .git" || pm2 restart "$BOT_NAME"
+        pm2 start index.js --name "$BOT_NAME" || pm2 restart "$BOT_NAME"
         pm2 save
         ;;
     stop)

@@ -8,146 +8,151 @@ const toBold = (text) => {
 };
 
 const pages = [
-    // Page 1: Overview & Index
-    `╭━━━〔 ${toBold("MESH-TECH MD BOT - HELP HUB")} 〕━━━┈⊷
-┃ 👋 *Welcome to the Interactive Help Center!*
-┃ *Use ⬅️ and ➡️ reactions below to flip pages,*
-┃ *or type .help [page number] to jump directly.*
+    // Page 1: How to Use
+    `╭━━━〔 ${toBold("MESH-TECH MD BOT - START GUIDE")} 〕━━━┈⊷
+┃ 👋 *Hello! I am MESH-TECH-MD-BOT.*
 ┃ 
-┃ 📄 *Page 1:* Overview & Index
-┃ 👑 *Page 2:* Owner Menu (Admin)
-┃ 📥 *Page 3:* Download Menu
-┃ 🪼 *Page 4:* Auto Menu (Automation)
-┃ ⚡ *Page 5:* AI Menu
-┃ 👥 *Page 6:* Group Menu
-┃ 🪔 *Page 7:* GitHub Menu
-┃ 🎨 *Page 8:* Logo Menu
-┃ ☣️ *Page 9:* Tools & Utility Menu
-┃ 🎮 *Page 10:* Games & Fun Menu
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷
-💡 *Tip:* React with ⬅️ or ➡️ to turn pages!`,
-
-    // Page 2: Owner Menu
-    `╭━━━〔 ${toBold("1. OWNER MENU (PAGE 2/10)")} 〕━━━┈⊷
-• .self - Switch bot to self mode
-• .public - Switch bot to public mode
-• .block / .unblock - Manage blocked users
-• .repo - Get repository link
-• .restart - Restart bot instance
-• .shutdown - Shutdown bot
-• .setbio / .setname / .setpp - Customize profile
-• .save - Save replied message/media
-• .join / .leave - Manage group memberships
-• .delaymsg - Configure response delay
-• .numinfo - Check phone number info
-• .del - Delete bot message
-• .reactch - React to channel messages
-• .idcheck - Check chat/group ID
+┃ 📖 *How to use:*
+┃ 1. All commands start with a dot [ *.* ]
+┃ 2. Example: Type *.menu* to see all features.
+┃ 3. For specific help, type *.help [page]*
+┃ 
+┃ 🎮 *Interactive Navigation:*
+┃ • React with ⬅️ to go to the previous page.
+┃ • React with ➡️ to go to the next page.
+┃ • Reactions only work for the person who ran .help
+┃ 
+┃ 🚀 *Start exploring by clicking ➡️ below!*
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
 
-    // Page 3: Download Menu
-    `╭━━━〔 ${toBold("2. DOWNLOAD MENU (PAGE 3/10)")} 〕━━━┈⊷
-• .video / .video2 - Download YouTube videos
-• .song / .song2 / .play - Download audio/songs
-• .gitclone - Clone GitHub repository as zip
-• .tiktok - Download TikTok videos
-• .insta - Download Instagram media
-• .fb - Download Facebook videos
-• .img - Search and download images
-• .apk - Download Android APKs
-• .ytmp4 / .ytmp3 - YouTube media converters
+    // Page 2: Index
+    `╭━━━〔 ${toBold("MESH-TECH MD BOT - HELP INDEX")} 〕━━━┈⊷
+┃ 📄 *Page 1:* How to Use
+┃ 📑 *Page 2:* Help Index
+┃ 👑 *Page 3:* Owner & Admin Menu
+┃ 📥 *Page 4:* Download & Media Menu
+┃ 🪼 *Page 5:* Automation & Presence
+┃ ⚡ *Page 6:* AI & Chatbot Menu
+┃ 👥 *Page 7:* Group Management
+┃ 🎨 *Page 8:* Logo & Text Effects
+┃ ☣️ *Page 9:* Tools & Utilities
+┃ 🎮 *Page 10:* Games & Fun
+┃ 🎌 *Page 11:* Anime Menu
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
 
-    // Page 4: Auto Menu
-    `╭━━━〔 ${toBold("3. AUTO MENU (PAGE 4/10)")} 〕━━━┈⊷
-• .antilink [on/off] - Delete links in groups
-• .antilinkkick [on/off] - Kick link posters
-• .antibug [on/off] - Anti crash/bug protection
-• .antidelete [on/off] - Recover deleted messages
-• .autostatus [on/off] - Auto handle statuses
-• .autoreact [on/off] - Auto react to chats
-• .autogreet [on/off] - Welcome new members
-• .autotypings / .autorecordings - Fake status
-• .alwaysonline [on/off] - Keep status online
-• .autoreactstatus / .autolikestatus [on/off] - Auto like
-• .autoviewstatus [on/off] - Auto view status
-• .autoreplystatus [on/off [text]] - Auto reply
+    // Page 3: Owner Menu
+    `╭━━━〔 ${toBold("3. OWNER MENU (PAGE 3/11)")} 〕━━━┈⊷
+┃ • .self - Bot only responds to you
+┃ • .public - Bot responds to everyone
+┃ • .block / .unblock - User management
+┃ • .restart - Reboot the bot instance
+┃ • .shutdown - Turn off the bot
+┃ • .setbio / .setname / .setpp - Profile
+┃ • .join / .leave - Group control
+┃ • .broadcast - Send msg to all chats
+┃ • .kickall - Clean group members
+┃ • .del - Delete any bot message
+┃ • .idcheck - Get chat/user IDs
+┃ • .save - Save status/media to DM
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
 
-    // Page 5: AI Menu
-    `╭━━━〔 ${toBold("4. AI MENU (PAGE 5/10)")} 〕━━━┈⊷
-• .chatgpt [prompt] - Query ChatGPT AI
-• .llama [prompt] - Query Llama AI
-• .claude [prompt] - Query Claude AI
-• .mistral [prompt] - Query Mistral AI
-• .gemini [prompt] - Query Gemini AI
-• .deepseek [prompt] - Query DeepSeek AI
-• .chatbot [on/off] - Toggle AI auto-chat
+    // Page 4: Download Menu
+    `╭━━━〔 ${toBold("4. DOWNLOAD MENU (PAGE 4/11)")} 〕━━━┈⊷
+┃ • .video / .video2 - YouTube Video
+┃ • .song / .song2 / .play - Audio/Music
+┃ • .ytmp4 / .ytmp3 - YT Converters
+┃ • .tiktok - TikTok No Watermark
+┃ • .insta - Instagram Reels/Posts
+┃ • .fb - Facebook Video Downloader
+┃ • .gitclone - Clone GitHub Repos
+┃ • .img - Google Image Search
+┃ • .apk - Android App Downloader
+┃ • .pinterest - Pinterest Media
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
 
-    // Page 6: Group Menu
-    `╭━━━〔 ${toBold("5. GROUP MENU (PAGE 6/10)")} 〕━━━┈⊷
-• .kick [mention] - Remove member from group
-• .add [number] - Add member to group
-• .kickall - Remove all members
-• .open / .close - Open or close group chat
-• .tagall - Mention all group members
-• .tagadmin - Mention group admins
-• .hidetag [text] - Send hidden tag message
-• .listactive - List active group members
-• .changename [name] - Change group subject
-• .closetime [mins] - Auto close group
-• .ginfo - Get group information
-• .warn [mention] - Warn group member
-• .gpp - Get group picture
-• .promote / .demote - Manage admin roles
+    // Page 5: Auto Menu
+    `╭━━━〔 ${toBold("5. AUTO MENU (PAGE 5/11)")} 〕━━━┈⊷
+┃ • .status - View/Set all automation
+┃ • .antidelete [on/off] - Recover msgs
+┃ • .antilink [on/off] - Group link protection
+┃ • .anticall [on/off] - Block incoming calls
+┃ • .autostatus [on/off] - View statuses
+┃ • .autoreact [p/g/all/off] - Auto reactions
+┃ • .alwaysonline [p/g/all/off] - Stay online
+┃ • .autotyping [p/g/all/off] - Fake typing
+┃ • .autorecording [p/g/all/off] - Fake record
+┃ • .autoreplystatus [on/off] - Status reply
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
 
-    // Page 7: GitHub Menu
-    `╭━━━〔 ${toBold("6. GITHUB MENU (PAGE 7/10)")} 〕━━━┈⊷
-• .github - GitHub profile info
-• .gitrepos - List user repositories
-• .gitfollowers - List followers
-• .gitstarred - List starred repos
-• .gitfollow [user] - Follow GitHub user
+    // Page 6: AI Menu
+    `╭━━━〔 ${toBold("6. AI MENU (PAGE 6/11)")} 〕━━━┈⊷
+┃ • .chatgpt [prompt] - Open AI ChatGPT
+┃ • .llama [prompt] - Meta Llama 3
+┃ • .deepseek [prompt] - DeepSeek AI
+┃ • .gemini [prompt] - Google Gemini
+┃ • .claude [prompt] - Anthropic Claude
+┃ • .chatbot [on/off] - Auto AI reply
+┃ • .remini - Enhance blurry images
+┃ • .imagine - AI Image Generation
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
+
+    // Page 7: Group Menu
+    `╭━━━〔 ${toBold("7. GROUP MENU (PAGE 7/11)")} 〕━━━┈⊷
+┃ • .kick / .add - Member management
+┃ • .promote / .demote - Admin control
+┃ • .open / .close - Group privacy
+┃ • .tagall - Mention every member
+┃ • .hidetag [text] - Ghost mention
+┃ • .welcome [on/off] - Welcome message
+┃ • .ginfo - Detailed group info
+┃ • .warn - Warn members (3 = kick)
+┃ • .listactive - Show active users
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
 
     // Page 8: Logo Menu
-    `╭━━━〔 ${toBold("7. LOGO MENU (PAGE 8/10)")} 〕━━━┈⊷
-• .logo [text] - Generate custom logo
-• .d3comic [text] - Comic text effect
-• .dragonball [text] - Dragonball text effect
-• .deadpool [text] - Deadpool text effect
-• .blackpink [text] - Blackpink text effect
-• .neonlight [text] - Neon light effect
-• .cat [text] - Cute cat text effect
+    `╭━━━〔 ${toBold("8. LOGO MENU (PAGE 8/11)")} 〕━━━┈⊷
+┃ • .logo [text] - Custom branding
+┃ • .neonlight - Neon text effect
+┃ • .blackpink - BP style logo
+┃ • .dragonball - DBZ text effect
+┃ • .thunder - Lightning effect
+┃ • .glitch - Glitch text style
+┃ • .marvel - Marvel studio logo
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
 
-    // Page 9: Tools & Utility Menu
-    `╭━━━〔 ${toBold("8. TOOLS & UTILITY (PAGE 9/10)")} 〕━━━┈⊷
-• .readmore - Send hidden expander text
-• .nice / .say - Text utilities
-• .tte - Text to emoji converter
-• .calc [expr] - Simple calculator
-• .poll [question|opt1,opt2] - Create poll
-• .hack / .matrix - Fun simulation effects
-• .fancy [text] - Fancy font generator
-• .cpp - Code runner
-• .insult - Random insult generator
-• .sticker / .s - Convert media to sticker
-• .toimg - Convert sticker to image
-• .qc - Quote maker
-• .weather [city] - Check weather
+    // Page 9: Tools & Utility
+    `╭━━━〔 ${toBold("9. TOOLS & UTILITY (PAGE 9/11)")} 〕━━━┈⊷
+┃ • .sticker / .s - Image to Sticker
+┃ • .toimg - Sticker to Image
+┃ • .tovideo - Sticker to Video
+┃ • .qc - Create chat bubble quote
+┃ • .trt [lang] [text] - Translate
+┃ • .calc - Calculator tool
+┃ • .weather - Local weather info
+┃ • .shorturl - Link shortener
+┃ • .vv / .vv2 - View Once bypass
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
 
-    // Page 10: Games & Fun Menu
-    `╭━━━〔 ${toBold("9. GAMES & FUN (PAGE 10/10)")} 〕━━━┈⊷
-• .tictactoe - Play Tic-Tac-Toe
-• .minesweeper - Play Minesweeper
-• .truth / .dare - Party games
-• .pickup - Pick-up lines
-• .joke - Random jokes
-• .ship - Love compatibility calculator
+    // Page 10: Games & Fun
+    `╭━━━〔 ${toBold("10. GAMES & FUN (PAGE 10/11)")} 〕━━━┈⊷
+┃ • .tictactoe - Play with friends
+┃ • .truth / .dare - Party game
+┃ • .joke - Random funny jokes
+┃ • .fact - Interesting facts
+┃ • .ship - Love percentage
+┃ • .hack - Fake hacking effect
+┃ • .matrix - Matrix text effect
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
+
+    // Page 11: Anime Menu
+    `╭━━━〔 ${toBold("11. ANIME MENU (PAGE 11/11)")} 〕━━━┈⊷
+┃ • .waifu / .neko - Anime girls
+┃ • .shinobu / .megumin - Characters
+┃ • .hug / .kiss / .slap - Reactions
+┃ • .cry / .dance / .smile - Actions
+┃ • .husbu - Anime boys
+┃ • .kitsune - Fox girls
+┃ • .luffy / .zoro - One Piece
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`
 ];
 

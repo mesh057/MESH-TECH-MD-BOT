@@ -42,6 +42,36 @@ const DATA_FILE = './data/bot_data.json';
 fs.ensureDirSync(AUTH_DIR);
 fs.ensureDirSync('./data');
 
+// ✅ Instance Locking to prevent ghost processes
+const LOCK_FILE = path.join(__dirname, 'tmp', 'bot.lock');
+if (!fs.existsSync(path.join(__dirname, 'tmp'))) fs.mkdirSync(path.join(__dirname, 'tmp'), { recursive: true });
+
+function acquireLock() {
+    if (fs.existsSync(LOCK_FILE)) {
+        const oldPid = parseInt(fs.readFileSync(LOCK_FILE, 'utf8').trim());
+        try {
+            process.kill(oldPid, 0);
+            console.error(`[System] ❌ Another instance is already running (PID ${oldPid}). Exiting to prevent duplicates.`);
+            process.exit(1);
+        } catch (e) {
+            console.warn(`[System] ⚠️ Stale lock found (PID ${oldPid}). Cleaning up.`);
+            fs.unlinkSync(LOCK_FILE);
+        }
+    }
+    fs.writeFileSync(LOCK_FILE, process.pid.toString());
+}
+
+function releaseLock() {
+    try {
+        if (fs.existsSync(LOCK_FILE)) {
+            const pid = parseInt(fs.readFileSync(LOCK_FILE, 'utf8').trim());
+            if (pid === process.pid) fs.unlinkSync(LOCK_FILE);
+        }
+    } catch (e) {}
+}
+
+acquireLock();
+
 let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, chatbot: {}, autoReacts: {}, presenceSettings: {} };
 if (fs.existsSync(DATA_FILE)) {
     try { botData = fs.readJsonSync(DATA_FILE); } catch (e) {}
@@ -746,9 +776,31 @@ app.get("/api/qr-code", (req, res) => {
     res.json({ success: true, qr: qrObj.qr });
 });
 
-app.listen(PORT, () => console.log(`🌐 Web Server running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`🌐 Web Server running on port ${PORT}`));
 
 loadExistingSessions();
+
+// ✅ Graceful Shutdown
+async function shutdown(signal) {
+    console.log(`[System] Received ${signal}. Shutting down gracefully...`);
+    try {
+        server.close();
+    } catch (e) {}
+    
+    for (const userId in sessions) {
+        console.log(`[System] Closing session: ${userId}`);
+        try {
+            sessions[userId].destroy();
+        } catch (e) {}
+    }
+    
+    releaseLock();
+    console.log('[System] Shutdown complete.');
+    process.exit(0);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 // Global error handlers
 process.on('uncaughtException', (err) => {
     console.error('[System] Uncaught Exception:', err.message);

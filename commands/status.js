@@ -24,84 +24,104 @@ async function statusCommand(sock, from, msg, isAdmin, botData, saveBotData, use
         };
     }
     if (!botData.presenceSettings) botData.presenceSettings = {};
-    if (!botData.presenceSettings[userId]) botData.presenceSettings[userId] = { alwaysOnline: false };
+    if (!botData.presenceSettings[userId]) {
+        botData.presenceSettings[userId] = {
+            alwaysOnline: 'off',
+            fakeTyping: 'off',
+            fakeRecording: 'off'
+        };
+    }
+    
     const settings = botData.statusSettings[userId];
+    const presence = botData.presenceSettings[userId];
     
     const action = args[0]?.toLowerCase();
     
     if (!action) {
-        const settings = botData.statusSettings[userId];
-        const menu = `╭━━━〔 ${toBold("STATUS SETTINGS")} 〕━━━┈⊷\n` +
+        const formatVal = (v) => {
+            if (v === true || v === 'all') return 'ALL (✅)';
+            if (v === 'p') return 'PRIVATE (👤)';
+            if (v === 'g') return 'GROUP (👥)';
+            return 'OFF (❌)';
+        };
+
+        const menu = `╭━━━〔 ${toBold("STATUS & PRESENCE SETTINGS")} 〕━━━┈⊷\n` +
                    `┃ ⋄ ${toBold("Auto Status:")} ${settings.autoStatus ? '✅' : '❌'}\n` +
                    `┃ ⋄ ${toBold("Auto Seen:")} ${settings.autoSeen ? '✅' : '❌'}\n` +
                    `┃ ⋄ ${toBold("Auto Like:")} ${settings.autoLike ? '✅' : '❌'}\n` +
                    `┃ ⋄ ${toBold("Auto Reply:")} ${settings.autoReply ? '✅' : '❌'}\n` +
                    `┃ ⋄ ${toBold("Auto Download:")} ${settings.autoDownload ? '✅' : '❌'}\n` +
-                   `┃ ⋄ ${toBold("Always Online:")} ${botData.presenceSettings[userId]?.alwaysOnline ? '✅' : '❌'}\n` +
+                   `┃ ⋄ ${toBold("Always Online:")} ${formatVal(presence.alwaysOnline)}\n` +
+                   `┃ ⋄ ${toBold("Auto Typing:")} ${formatVal(presence.fakeTyping)}\n` +
+                   `┃ ⋄ ${toBold("Auto Recording:")} ${formatVal(presence.fakeRecording)}\n` +
                    `┃ ⋄ ${toBold("Current System:")} ${settings.system || 1}\n` +
                    `╰━━━━━━━━━━━━━━━━━━┈⊷\n\n` +
-                   `*Commands:*\n` +
-                   `.status on/off - Toggle All\n` +
+                   `*Commands (p/g/all/off):*\n` +
+                   `.status on/off - Toggle All Status\n` +
                    `.status seen on/off\n` +
                    `.status like on/off\n` +
                    `.status reply on/off [text]\n` +
                    `.status download on/off\n` +
-                   `.status online on/off\n` +
+                   `.status online p/g/all/off\n` +
+                   `.status typing p/g/all/off\n` +
+                   `.status recording p/g/all/off\n` +
                    `.status system 1/2/3`;
         return await sock.sendMessage(from, { text: menu }, { quoted: msg });
     }
 
     if (action === 'on') {
-        botData.statusSettings[userId].autoStatus = true;
-        botData.statusSettings[userId].autoSeen = true;
-        botData.statusSettings[userId].autoLike = true;
-        botData.statusSettings[userId].autoReply = true;
-        botData.statusSettings[userId].autoDownload = true;
-        botData.presenceSettings[userId].alwaysOnline = true;
+        settings.autoStatus = true;
+        settings.autoSeen = true;
+        settings.autoLike = true;
+        settings.autoReply = true;
+        settings.autoDownload = true;
+        presence.alwaysOnline = 'all';
         saveBotData();
-        await sock.sendMessage(from, { text: "✅ *ALL STATUS FEATURES: ON*" }, { quoted: msg });
+        await sock.sendMessage(from, { text: "✅ *ALL STATUS & ONLINE FEATURES: ON (ALL)*" }, { quoted: msg });
     } else if (action === 'off') {
-        botData.statusSettings[userId].autoStatus = false;
-        botData.statusSettings[userId].autoSeen = false;
-        botData.statusSettings[userId].autoLike = false;
-        botData.statusSettings[userId].autoReply = false;
-        botData.statusSettings[userId].autoDownload = false;
-        botData.presenceSettings[userId].alwaysOnline = false;
+        settings.autoStatus = false;
+        settings.autoSeen = false;
+        settings.autoLike = false;
+        settings.autoReply = false;
+        settings.autoDownload = false;
+        presence.alwaysOnline = 'off';
+        presence.fakeTyping = 'off';
+        presence.fakeRecording = 'off';
         saveBotData();
-        await sock.sendMessage(from, { text: "❌ *ALL STATUS FEATURES: OFF*" }, { quoted: msg });
+        await sock.sendMessage(from, { text: "❌ *ALL STATUS & PRESENCE FEATURES: OFF*" }, { quoted: msg });
     } else if (action === 'seen') {
         const val = args[1]?.toLowerCase();
-        if (val === 'on') {
-            botData.statusSettings[userId].autoSeen = true;
-            botData.statusSettings[userId].autoStatus = true;
+        if (val === 'on' || val === 'all' || val === 'true') {
+            settings.autoSeen = true;
+            settings.autoStatus = true;
             saveBotData();
             await sock.sendMessage(from, { text: "✅ *Auto Seen: ON*" }, { quoted: msg });
-        } else if (val === 'off') {
-            botData.statusSettings[userId].autoSeen = false;
+        } else if (val === 'off' || val === 'false') {
+            settings.autoSeen = false;
             saveBotData();
             await sock.sendMessage(from, { text: "❌ *Auto Seen: OFF*" }, { quoted: msg });
         }
     } else if (action === 'like') {
         const val = args[1]?.toLowerCase();
-        if (val === 'on') {
-            botData.statusSettings[userId].autoLike = true;
-            botData.statusSettings[userId].autoStatus = true;
+        if (val === 'on' || val === 'all' || val === 'true') {
+            settings.autoLike = true;
+            settings.autoStatus = true;
             saveBotData();
             await sock.sendMessage(from, { text: "✅ *Auto Like: ON*" }, { quoted: msg });
-        } else if (val === 'off') {
-            botData.statusSettings[userId].autoLike = false;
+        } else if (val === 'off' || val === 'false') {
+            settings.autoLike = false;
             saveBotData();
             await sock.sendMessage(from, { text: "❌ *Auto Like: OFF*" }, { quoted: msg });
         }
     } else if (action === 'reply') {
         const val = args[1]?.toLowerCase();
-        if (val === 'on') {
+        if (val === 'on' || val === 'all' || val === 'true') {
             settings.autoReply = true;
             settings.autoStatus = true;
             if (args.slice(2).length) settings.replyText = args.slice(2).join(' ');
             saveBotData();
             await sock.sendMessage(from, { text: `✅ *Auto Reply Status: ON*\n💬 ${settings.replyText}` }, { quoted: msg });
-        } else if (val === 'off') {
+        } else if (val === 'off' || val === 'false') {
             settings.autoReply = false;
             saveBotData();
             await sock.sendMessage(from, { text: "❌ *Auto Reply Status: OFF*" }, { quoted: msg });
@@ -110,34 +130,52 @@ async function statusCommand(sock, from, msg, isAdmin, botData, saveBotData, use
         }
     } else if (action === 'online') {
         const val = args[1]?.toLowerCase();
-        if (val === 'on') {
-            botData.presenceSettings[userId].alwaysOnline = true;
-            saveBotData();
+        let target = 'off';
+        if (val === 'on' || val === 'all') target = 'all';
+        else if (val === 'p' || val === 'g' || val === 'off') target = val;
+        
+        presence.alwaysOnline = target;
+        saveBotData();
+        if (target !== 'off') {
             await sock.sendPresenceUpdate('available').catch(() => {});
-            await sock.sendMessage(from, { text: "✅ *Always Online: ON*" }, { quoted: msg });
-        } else if (val === 'off') {
-            botData.presenceSettings[userId].alwaysOnline = false;
-            saveBotData();
-            await sock.sendMessage(from, { text: "❌ *Always Online: OFF*" }, { quoted: msg });
-        } else {
-            await sock.sendMessage(from, { text: "❌ Usage: .status online on/off" }, { quoted: msg });
         }
+        await sock.sendMessage(from, { text: `✅ *Always Online set to: ${target.toUpperCase()}*` }, { quoted: msg });
+    } else if (action === 'typing') {
+        const val = args[1]?.toLowerCase();
+        let target = 'off';
+        if (val === 'on' || val === 'all') target = 'all';
+        else if (val === 'p' || val === 'g' || val === 'off') target = val;
+        
+        presence.fakeTyping = target;
+        if (target !== 'off') presence.fakeRecording = 'off';
+        saveBotData();
+        await sock.sendMessage(from, { text: `✅ *Auto Typing set to: ${target.toUpperCase()}*` }, { quoted: msg });
+    } else if (action === 'recording') {
+        const val = args[1]?.toLowerCase();
+        let target = 'off';
+        if (val === 'on' || val === 'all') target = 'all';
+        else if (val === 'p' || val === 'g' || val === 'off') target = val;
+        
+        presence.fakeRecording = target;
+        if (target !== 'off') presence.fakeTyping = 'off';
+        saveBotData();
+        await sock.sendMessage(from, { text: `✅ *Auto Recording set to: ${target.toUpperCase()}*` }, { quoted: msg });
     } else if (action === 'download') {
         const val = args[1]?.toLowerCase();
-        if (val === 'on') {
-            botData.statusSettings[userId].autoDownload = true;
-            botData.statusSettings[userId].autoStatus = true;
+        if (val === 'on' || val === 'all' || val === 'true') {
+            settings.autoDownload = true;
+            settings.autoStatus = true;
             saveBotData();
             await sock.sendMessage(from, { text: "✅ *Auto Download: ON*" }, { quoted: msg });
-        } else if (val === 'off') {
-            botData.statusSettings[userId].autoDownload = false;
+        } else if (val === 'off' || val === 'false') {
+            settings.autoDownload = false;
             saveBotData();
             await sock.sendMessage(from, { text: "❌ *Auto Download: OFF*" }, { quoted: msg });
         }
     } else if (action === 'system') {
         const sys = parseInt(args[1]);
         if ([1, 2, 3].includes(sys)) {
-            botData.statusSettings[userId].system = sys;
+            settings.system = sys;
             saveBotData();
             await sock.sendMessage(from, { text: `✅ *OS System set to: ${sys}*` }, { quoted: msg });
         } else {
