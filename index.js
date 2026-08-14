@@ -28,6 +28,7 @@ const commands = {
     remini: require('./commands/remini'),
     pinterest: require('./commands/pinterest'),
     help: require('./commands/help'),
+    ping: require('./commands/ping'),
 };
 
 const { storeMessage, handleMessageRevocation } = require('./commands/antidelete');
@@ -476,6 +477,7 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                                 case 'vv': await commands.vv(this.sock, from, msg); break;
                                 case 'vv2': await commands.vv2(this.sock, from, msg); break;
                                 case 'dp': await commands.dp(this.sock, from, msg, args); break;
+                                case 'ping': await commands.ping(this, from, msg); break;
                                 case 'remini': await commands.remini(this, from, msg); break;
                                 case 'help': await commands.help(this.sock, from, msg, args); break;
                                 case 'h': await commands.help(this.sock, from, msg, args); break;
