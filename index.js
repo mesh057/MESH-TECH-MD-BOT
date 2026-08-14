@@ -514,18 +514,12 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                                 case 'autotypings':
                                 case 'autotyping':
                                 case 'typing':
-                                    botData.presenceSettings[this.userId].fakeTyping = (args[0]?.toLowerCase() === 'on');
-                                    botData.presenceSettings[this.userId].fakeRecording = false;
-                                    saveBotData();
-                                    await this.sock.sendMessage(from, { text: `✅ *Auto Typing: ${botData.presenceSettings[this.userId].fakeTyping ? 'ON' : 'OFF'}*` }, { quoted: msg });
+                                    await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['typing', ...args]);
                                     break;
                                 case 'autorecordings':
                                 case 'autorecording':
                                 case 'recording':
-                                    botData.presenceSettings[this.userId].fakeRecording = (args[0]?.toLowerCase() === 'on');
-                                    botData.presenceSettings[this.userId].fakeTyping = false;
-                                    saveBotData();
-                                    await this.sock.sendMessage(from, { text: `✅ *Auto Recording: ${botData.presenceSettings[this.userId].fakeRecording ? 'ON' : 'OFF'}*` }, { quoted: msg });
+                                    await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['recording', ...args]);
                                     break;
                                 case 'alwayson':
                                     await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['online', ...args]);
