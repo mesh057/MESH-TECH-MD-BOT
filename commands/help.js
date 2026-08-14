@@ -46,6 +46,7 @@ const pages = [
     `╔═❖•⊰ 👑 *OWNER MENU* ⊱•❖═╗
 • .self — Set bot to private mode.
 • .public — Set bot to public mode.
+• .pairqr — Generate a QR code to link accounts.
 • .block — Block a user from using the bot.
 • .unblock — Unblock a user.
 • .restart — Restarts the bot process.

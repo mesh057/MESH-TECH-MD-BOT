@@ -30,6 +30,7 @@ const commands = {
     help: require('./commands/help'),
     ping: require('./commands/ping'),
     system: require('./commands/system'),
+    pairqr: require('./commands/pairqr'),
 };
 
 const { storeMessage, handleMessageRevocation } = require('./commands/antidelete');
