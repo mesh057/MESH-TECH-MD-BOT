@@ -4,8 +4,8 @@ const axios = require('axios');
 const BASE_URL = 'https://apis.xcasper.space/api';
 
 /**
- * MESH-TECH X-CASPER API INTEGRATION
- * Free, unlimited APIs for media, AI, search, and tools.
+ * MESH-TECH X-CASPER API INTEGRATION (EXPANDED)
+ * Free, unlimited APIs for media, AI, search, tools, and fun.
  */
 
 const xcasper = {
@@ -100,7 +100,54 @@ const xcasper = {
         else reply('❌ AI unavailable.');
     },
 
-    // --- TOOLS ---
+    bible: async ({ args, reply }) => {
+        const query = args.join(' ');
+        if (!query) return reply('❌ Enter a Bible question or verse topic!');
+        const res = await axios.get(`${BASE_URL}/bible-ai?message=${encodeURIComponent(query)}`);
+        if (res.data.status) reply(`📖 *Bible AI:*\n\n${res.data.data.response || res.data.data}`);
+        else reply('❌ Bible AI unavailable.');
+    },
+
+    quran: async ({ args, reply }) => {
+        const query = args.join(' ');
+        if (!query) return reply('❌ Enter a Quran question or topic!');
+        const res = await axios.get(`${BASE_URL}/quran-ai?message=${encodeURIComponent(query)}`);
+        if (res.data.status) reply(`☪️ *Quran AI:*\n\n${res.data.data.response || res.data.data}`);
+        else reply('❌ Quran AI unavailable.');
+    },
+
+    // --- AI IMAGE TOOLS ---
+    removebg: async ({ conn, m, args, jid, reply }) => {
+        const url = args[0];
+        if (!url) return reply('❌ Provide an image URL!\nExample: `.removebg https://...`');
+        reply('⏳ *Removing background...*');
+        const res = await axios.get(`${BASE_URL}/ai/removebg?url=${encodeURIComponent(url)}`);
+        if (res.data.status) {
+            await conn.sendMessage(jid, { image: { url: res.data.data.url }, caption: '✅ *Background Removed!*' }, { quoted: m });
+        } else reply('❌ Failed to remove background.');
+    },
+
+    enlarger: async ({ conn, m, args, jid, reply }) => {
+        const url = args[0];
+        if (!url) return reply('❌ Provide an image URL!\nExample: `.enlarger https://...`');
+        reply('⏳ *Upscaling image...*');
+        const res = await axios.get(`${BASE_URL}/ai/enlarger?url=${encodeURIComponent(url)}`);
+        if (res.data.status) {
+            await conn.sendMessage(jid, { image: { url: res.data.data.url }, caption: '✅ *Image Enlarged!*' }, { quoted: m });
+        } else reply('❌ Failed to enlarge image.');
+    },
+
+    colorize: async ({ conn, m, args, jid, reply }) => {
+        const url = args[0];
+        if (!url) return reply('❌ Provide a black & white image URL!\nExample: `.colorize https://...`');
+        reply('⏳ *Colorizing photo...*');
+        const res = await axios.get(`${BASE_URL}/ai/colorize?url=${encodeURIComponent(url)}`);
+        if (res.data.status) {
+            await conn.sendMessage(jid, { image: { url: res.data.data.url }, caption: '✅ *Photo Colorized!*' }, { quoted: m });
+        } else reply('❌ Failed to colorize photo.');
+    },
+
+    // --- TOOLS & UTILITIES ---
     qr: async ({ conn, m, args, jid }) => {
         const query = args.join(' ');
         if (!query) return;
@@ -113,6 +160,37 @@ const xcasper = {
         if (!query) return;
         const ssUrl = `${BASE_URL}/tools/screenshot?url=${encodeURIComponent(query)}`;
         await conn.sendMessage(jid, { image: { url: ssUrl }, caption: `📸 *Screenshot Taken*` }, { quoted: m });
+    },
+
+    ocr: async ({ args, reply }) => {
+        const url = args[0];
+        if (!url) return reply('❌ Provide an image URL for OCR text extraction!');
+        const res = await axios.get(`${BASE_URL}/tools/ocr?url=${encodeURIComponent(url)}`);
+        if (res.data.status) {
+            reply(`📄 *Extracted Text:* \n\n${res.data.data.text || res.data.data}`);
+        } else reply('❌ OCR failed.');
+    },
+
+    tempmail: async ({ reply }) => {
+        const res = await axios.get(`${BASE_URL}/tools/temp-mail`);
+        if (res.data.status) {
+            reply(`✉️ *Temporary Email Generated:*\n📧 Email: \`${res.data.data.email}\`\n📌 ID: ${res.data.data.id || 'N/A'}`);
+        } else reply('❌ Failed to create temp mail.');
+    },
+
+    // --- FUN ---
+    quote: async ({ reply }) => {
+        const res = await axios.get(`${BASE_URL}/fun/quotes`);
+        if (res.data.status) {
+            reply(`💬 *" ${res.data.data.quote} "*\n\n— *${res.data.data.author || 'Unknown'}*`);
+        } else reply('❌ Failed to fetch quote.');
+    },
+
+    joke: async ({ reply }) => {
+        const res = await axios.get(`${BASE_URL}/fun/jokes`);
+        if (res.data.status) {
+            reply(`😂 *Joke:*\n\n${res.data.data.joke || res.data.data}`);
+        } else reply('❌ Failed to fetch joke.');
     }
 };
 
