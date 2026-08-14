@@ -8,8 +8,8 @@ module.exports = {
     aliases: ['sys', 'botstatus', 'health'],
     description: 'Check real-time bot health, memory, and event loop lag.',
 
-    async execute(sock, msg, args, resources) {
-        const jid = msg.key.remoteJid;
+    async execute(sock, from, msg, args, resources) {
+        const jid = from;
         const start = performance.now();
 
         // Measure event loop lag

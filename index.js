@@ -43,6 +43,11 @@ const DATA_FILE = './data/bot_data.json';
 fs.ensureDirSync(AUTH_DIR);
 fs.ensureDirSync('./data');
 
+let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, chatbot: {}, autoReacts: {}, presenceSettings: {} };
+if (fs.existsSync(DATA_FILE)) {
+    try { botData = fs.readJsonSync(DATA_FILE); } catch (e) {}
+}
+
 // ✅ Instance Locking to prevent ghost processes
 const LOCK_FILE = path.join(__dirname, 'tmp', 'bot.lock');
 if (!fs.existsSync(path.join(__dirname, 'tmp'))) fs.mkdirSync(path.join(__dirname, 'tmp'), { recursive: true });
@@ -102,11 +107,6 @@ function releaseLock() {
     // Startup initialization
     (async () => {
         await acquireLock();
-
-        let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, chatbot: {}, autoReacts: {}, presenceSettings: {} };
-    if (fs.existsSync(DATA_FILE)) {
-        try { botData = fs.readJsonSync(DATA_FILE); } catch (e) {}
-    }
 
     // Optimization: Cache admin status to avoid repeated groupMetadata calls
     const adminCache = new Map();
@@ -299,6 +299,29 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     if (msg.key.id.startsWith('BAE5') && msg.key.fromMe) return;
 
                     const from = msg.key.remoteJid;
+                    const senderId = msg.key.participant || msg.key.remoteJid;
+                    const isGroup = from.endsWith('@g.us');
+
+                    const getCachedGroupAdmins = async () => {
+                        if (!isGroup) return { isSenderAdmin: true, isBotAdmin: false };
+                        const cacheKey = `${from}`;
+                        const cached = adminCache.get(cacheKey);
+                        if (cached && (Date.now() - cached.time) < 60000) return cached.data;
+                        
+                        try {
+                            const metadata = await this.sock.groupMetadata(from);
+                            const admins = metadata.participants.filter(p => p.admin).map(p => p.id);
+                            const data = { 
+                                isSenderAdmin: admins.includes(senderId), 
+                                isBotAdmin: admins.includes(jidNormalizedUser(this.sock.user.id)) 
+                            };
+                            adminCache.set(cacheKey, { time: Date.now(), data });
+                            return data;
+                        } catch (e) {
+                            return { isSenderAdmin: false, isBotAdmin: false };
+                        }
+                    };
+
                     // WhatsApp may wrap incoming messages in ephemeral/view-once containers.
                     // Unwrap them before reading text, otherwise commands appear to be ignored
                     // in both private chats and groups.
@@ -328,7 +351,6 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                         if (val === 'g' && isGroup) return true;
                         return false;
                     };
-                    const isGroup = from.endsWith('@g.us');
 
                     // ✅ Auto-Presence Simulation (Optimized for Realism)
                     const presenceSettings = botData.presenceSettings?.[this.userId] || {};
@@ -409,25 +431,7 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                         }
                     }
 
-                    const getCachedGroupAdmins = async () => {
-                        if (!from.endsWith('@g.us')) return { isSenderAdmin: true, isBotAdmin: false };
-                        const cacheKey = `${from}`;
-                        const cached = adminCache.get(cacheKey);
-                        if (cached && (Date.now() - cached.time) < 60000) return cached.data; // Cache for 1 minute
-                        
-                        try {
-                            const metadata = await this.sock.groupMetadata(from);
-                            const admins = metadata.participants.filter(p => p.admin).map(p => p.id);
-                            const data = { 
-                                isSenderAdmin: admins.includes(msg.key.participant || msg.key.remoteJid), 
-                                isBotAdmin: admins.includes(jidNormalizedUser(this.sock.user.id)) 
-                            };
-                            adminCache.set(cacheKey, { time: Date.now(), data });
-                            return data;
-                        } catch (e) {
-                            return { isSenderAdmin: false, isBotAdmin: false };
-                        }
-                    };
+
 
                     // ✅ AntiLink Handler
                     if (isCmd === false && from.endsWith('@g.us') && botData.antilinkGroups?.[from]) {
@@ -519,54 +523,75 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                             const menuHandled = await handleMenuCommand(this, from, msg, command, args, botData, saveBotData, getCommandMetrics(Object.values(sessions).filter((session) => session.isConnected).length));
                             if (menuHandled) return;
 
-                            const senderId = msg.key.participant || msg.key.remoteJid;
                             const isAdminOrOwner = (await getCachedGroupAdmins()).isSenderAdmin || isOwner(senderId, this);
 
-                            switch (command) {
-                                case 'song': await commands.song(this, from, msg); break;
-                                case 'video': await commands.video(this, from, msg); break;
-                                case 'ytmp3': await commands.ytmp3.run(this, msg, args, { sender: from }); break;
-                                case 'ytmp4': await commands.ytmp4.run(this, msg, args, { sender: from }); break;
-                                case 'antilink': await commands.antilink(this.sock, from, msg, isAdminOrOwner, (await getCachedGroupAdmins()).isBotAdmin, botData, saveBotData, args); break;
-                                case 'anticall': await commands.anticall(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
-                                case 'antidelete': await commands.antidelete(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
-                                case 'welcome': await commands.welcome(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, args); break;
-                                case 'kick': await commands.kick(this.sock, from, msg, isAdminOrOwner, (await getCachedGroupAdmins()).isBotAdmin, botData, saveBotData, args); break;
-                                case 'status': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
-                                case 'autostatus': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
-                                case 'autoreactstatus': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['like', ...args]); break;
-                                case 'autolikestatus': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['like', ...args]); break;
-                                case 'autoviewstatus': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['seen', ...args]); break;
-                                case 'autoreplystatus': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['reply', ...args]); break;
-                                case 'alwaysonline': await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['online', ...args]); break;
-                                case 'autoreacts': await commands.autoreacts(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
-                                case 'autoreact': await commands.autoreacts(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
-                                case 'autotypings':
-                                case 'autotyping':
-                                case 'typing':
-                                    await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['typing', ...args]);
-                                    break;
-                                case 'autorecordings':
-                                case 'autorecording':
-                                case 'recording':
-                                    await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['recording', ...args]);
-                                    break;
-                                case 'alwayson':
-                                    await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['online', ...args]);
-                                    break;
-                                case 'vv': await commands.vv(this.sock, from, msg); break;
-                                case 'vv2': await commands.vv2(this.sock, from, msg); break;
-                                case 'dp': await commands.dp(this.sock, from, msg, args); break;
-                                case 'ping': await commands.ping(this, from, msg); break;
-                                case 'system':
-                                case 'sys':
-                                case 'health':
-                                    await commands.system(this.sock, from, msg, args, { settings: botData });
-                                    break;
-                                case 'remini': await commands.remini(this, from, msg); break;
-                                case 'help': await commands.help(this.sock, from, msg, args); break;
-                                case 'h': await commands.help(this.sock, from, msg, args); break;
-                                case 'pinterest': await commands.pinterest(this, from, msg); break;
+                            // Helper to find command by name or alias
+                            const findCommand = (cmdName) => {
+                                if (commands[cmdName]) return { module: commands[cmdName], name: cmdName };
+                                for (const key in commands) {
+                                    const mod = commands[key];
+                                    if (mod.aliases && mod.aliases.includes(cmdName)) return { module: mod, name: key };
+                                    if (mod.commands && mod.commands.includes(cmdName)) return { module: mod, name: key };
+                                }
+                                return null;
+                            };
+
+                            const cmdInfo = findCommand(command);
+                            if (cmdInfo) {
+                                const { module: cmdModule, name: cmdName } = cmdInfo;
+                                
+                                switch (cmdName) {
+                                    case 'song': await cmdModule(this, from, msg); break;
+                                    case 'video': await cmdModule(this, from, msg); break;
+                                    case 'ytmp3': await cmdModule.run(this, msg, args, { sender: from }); break;
+                                    case 'ytmp4': await cmdModule.run(this, msg, args, { sender: from }); break;
+                                    case 'antilink': await cmdModule(this.sock, from, msg, isAdminOrOwner, (await getCachedGroupAdmins()).isBotAdmin, botData, saveBotData, args); break;
+                                    case 'anticall': await cmdModule(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
+                                    case 'antidelete': await cmdModule(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
+                                    case 'welcome': await cmdModule(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, args); break;
+                                    case 'kick': await cmdModule(this.sock, from, msg, isAdminOrOwner, (await getCachedGroupAdmins()).isBotAdmin, botData, saveBotData, args); break;
+                                    case 'status': 
+                                    case 'autostatus':
+                                    case 'autoreactstatus':
+                                    case 'autolikestatus':
+                                    case 'autoviewstatus':
+                                    case 'autoreplystatus':
+                                    case 'alwaysonline':
+                                    case 'autotypings':
+                                    case 'autotyping':
+                                    case 'typing':
+                                    case 'autorecordings':
+                                    case 'autorecording':
+                                    case 'recording':
+                                    case 'alwayson':
+                                        let statusArgs = [...args];
+                                        if (command === 'autoreactstatus' || command === 'autolikestatus') statusArgs = ['like', ...args];
+                                        else if (command === 'autoviewstatus') statusArgs = ['seen', ...args];
+                                        else if (command === 'autoreplystatus') statusArgs = ['reply', ...args];
+                                        else if (command === 'alwaysonline' || command === 'alwayson') statusArgs = ['online', ...args];
+                                        else if (command === 'autotypings' || command === 'autotyping' || command === 'typing') statusArgs = ['typing', ...args];
+                                        else if (command === 'autorecordings' || command === 'autorecording' || command === 'recording') statusArgs = ['recording', ...args];
+                                        await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, statusArgs); 
+                                        break;
+                                    case 'autoreacts': await cmdModule(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, args); break;
+                                    case 'vv': await cmdModule(this.sock, from, msg); break;
+                                    case 'vv2': await cmdModule(this.sock, from, msg); break;
+                                    case 'dp': await cmdModule(this.sock, from, msg, args); break;
+                                    case 'ping': await cmdModule(this, from, msg); break;
+                                    case 'system':
+                                        if (typeof cmdModule === 'function') {
+                                            await cmdModule(this.sock, from, msg, args, { settings: botData });
+                                        } else if (cmdModule.execute) {
+                                            await cmdModule.execute(this.sock, from, msg, args, { settings: botData });
+                                        }
+                                        break;
+                                    case 'remini': await cmdModule(this, from, msg); break;
+                                    case 'help': await cmdModule(this.sock, from, msg, args); break;
+                                    case 'pinterest': await cmdModule(this, from, msg); break;
+                                }
+                            } else {
+                                // If not found in primary commands, it might be a sub-menu command handled by menuHandler
+                                // But we already called handleMenuCommand above.
                             }
                             await this.sock.sendMessage(from, { react: { text: '✅', key: msg.key } }).catch(() => {});
                         } catch (e) {
@@ -608,11 +633,13 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     this.isConnected = true;
                     this.isInitializing = false;
                     const presenceSettings = botData.presenceSettings?.[this.userId];
-                    if (presenceSettings?.alwaysOnline) {
+                    if (presenceSettings?.alwaysOnline && presenceSettings.alwaysOnline !== 'off') {
                         await this.sock.sendPresenceUpdate('available').catch(() => {});
                         clearInterval(this.presenceTimer);
                         this.presenceTimer = setInterval(() => {
-                            if (this.isConnected && this.sock) this.sock.sendPresenceUpdate('available').catch(() => {});
+                            if (this.isConnected && this.sock && botData.presenceSettings?.[this.userId]?.alwaysOnline !== 'off') {
+                                this.sock.sendPresenceUpdate('available').catch(() => {});
+                            }
                         }, 30000);
                     }
 activePairings.delete(this.userId);
@@ -828,7 +855,8 @@ const server = app.listen(PORT, () => console.log(`🌐 Web Server running on po
 
 // ✅ Graceful Shutdown
 async function shutdown(signal) {
-    console.log(`[System] Received ${signal}. Shutting down gracefully...`);
+    console.log(`\n[System] 🛑 Received ${signal}. Shutting down gracefully...`);
+    
     try {
         server.close();
     } catch (e) {}
@@ -840,6 +868,12 @@ async function shutdown(signal) {
         } catch (e) {}
     }
     
+    // Final data save
+    try {
+        fs.writeJsonSync(DATA_FILE, botData);
+        console.log('[System] ✅ Data saved successfully.');
+    } catch (e) {}
+    
     releaseLock();
     console.log('[System] Shutdown complete.');
     process.exit(0);
@@ -847,6 +881,7 @@ async function shutdown(signal) {
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
+
 // Global error handlers
 process.on('uncaughtException', (err) => {
     console.error('[System] Uncaught Exception:', err.message);
@@ -860,32 +895,6 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('warning', (warning) => {
     console.warn('[System] Warning:', warning.name, warning.message);
 });
-
-// ✅ Graceful Shutdown handling
-const handleShutdown = async (signal) => {
-    console.log(`\n[System] 🛑 Received ${signal}. Shutting down gracefully...`);
-    releaseLock();
-    
-    // Close all active sessions
-    for (const userId in sessions) {
-        if (sessions[userId].sock) {
-            try {
-                sessions[userId].sock.end();
-            } catch (e) {}
-        }
-    }
-    
-    // Final data save
-    try {
-        fs.writeJsonSync(DATA_FILE, botData);
-        console.log('[System] ✅ Data saved successfully.');
-    } catch (e) {}
-    
-    process.exit(0);
-};
-
-process.on('SIGTERM', () => handleShutdown('SIGTERM'));
-process.on('SIGINT', () => handleShutdown('SIGINT'));
 
 // Keep process alive
 setInterval(() => {}, 1000);

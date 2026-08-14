@@ -32,8 +32,6 @@ module.exports = async function(session, from, msg) {
             buffer = Buffer.concat([buffer, chunk]);
         }
 
-        const imgUrl = await uploadToUrl(buffer);
-        
         const form = new FormData();
         form.append('image', buffer, { filename: 'image.png', contentType: 'image/png' });
         form.append('scale', '2');
