@@ -2,7 +2,7 @@
 deployment:
   tasks:
     - export DEPLOYPATH=/home3/tunupublsh/MESH-TECH-MD-BOT
-    - /bin/cp -R * $DEPLOYPATH
+    - /bin/cp -R . $DEPLOYPATH
     - cd $DEPLOYPATH
     - npm install
     - pm2 restart mesh-bot || pm2 start index.js --name mesh-bot

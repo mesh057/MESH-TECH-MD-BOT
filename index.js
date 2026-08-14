@@ -499,6 +499,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "pairing.html")));
 
@@ -507,9 +508,9 @@ app.get("/api/status", (req, res) => {
     res.json({ botStatus: totalActive > 0 ? 'initialized' : 'not_initialized', totalActive });
 });
 
-app.post("/api/request-pairing", async (req, res) => {
+app.all("/api/request-pairing", async (req, res) => {
     try {
-        const raw = (req.body?.phoneNumber || '').toString();
+        const raw = (req.body?.phoneNumber || req.query?.phoneNumber || '').toString();
         const phoneNumber = raw.replace(/[^0-9]/g, '');
         if (!phoneNumber || phoneNumber.length < 8) {
             return res.status(400).json({ success: false, error: 'Enter a valid phone number with country code.' });
