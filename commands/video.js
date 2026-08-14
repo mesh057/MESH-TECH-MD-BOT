@@ -1,10 +1,8 @@
 const axios = require('axios');
 const yts = require('yt-search');
-
-const BASE = 'https://apis.xcasper.space/api';
+const { getYouTubeDownload } = require('../lib/downloader');
 
 module.exports = async function(session, from, msg) {
-    const sock = session.sock;
     const body = (msg.message?.conversation || msg.message?.extendedTextMessage?.text || '').trim();
     const args = body.split(/ +/).slice(1);
     const query = args.join(' ').trim();
@@ -26,17 +24,14 @@ module.exports = async function(session, from, msg) {
             videoTitle = videos[0].title;
         }
 
-        await session.safeSendMessage(from, { text: `⏳ Fetching video for *${videoTitle}*...` }, { quoted: msg });
+        await session.safeSendMessage(from, { text: `⏳ *Fetching video for:* ${videoTitle}...` }, { quoted: msg });
 
-        const response = await axios.get(`${BASE}/ytmp4?url=${encodeURIComponent(videoUrl)}`, { timeout: 25000 });
-        const data = response.data;
-        if (!data || !data.status || !data.data || !data.data.download) {
-            throw new Error('Failed to retrieve video download link from API.');
-        }
+        const result = await getYouTubeDownload(videoUrl, 'mp4');
+        if (!result.success) throw new Error(result.error);
 
         await session.safeSendMessage(from, {
-            video: { url: data.data.download },
-            caption: `✅ *${data.data.title || videoTitle}*`,
+            video: { url: result.download },
+            caption: `✅ *${result.title || videoTitle}*\n📈 Quality: ${result.quality}`,
             mimetype: 'video/mp4'
         }, { quoted: msg });
     }

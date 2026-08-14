@@ -1,11 +1,10 @@
 'use strict';
 
-const axios = require('axios');
-const BASE = 'https://apis.xcasper.space/api';
+const { getYouTubeDownload } = require('../lib/downloader');
 
 module.exports = {
     commands: ['ytmp4', 'ytvideo', 'ytv', 'yt'],
-    description: 'Download YouTube video quickly via X-Casper API',
+    description: 'Download YouTube video quickly',
     permission: 'public',
     group: true,
     private: true,
@@ -19,21 +18,15 @@ module.exports = {
             }, { quoted: message });
         }
 
-        await session.safeSendMessage(sender, { text: '⏳ Fetching video...', contextInfo }, { quoted: message });
+        await session.safeSendMessage(sender, { text: '⏳ *Fetching video... Please wait.*', contextInfo }, { quoted: message });
 
         try {
-            const response = await axios.get(`${BASE}/ytmp4?url=${encodeURIComponent(url)}`, { timeout: 25000 });
-            const data = response.data;
-            if (!data || !data.status || !data.data || !data.data.download) {
-                throw new Error('Failed to retrieve video download link from API.');
-            }
-
-            const videoUrl = data.data.download;
-            const title = data.data.title || 'YouTube Video';
+            const result = await getYouTubeDownload(url, 'mp4');
+            if (!result.success) throw new Error(result.error);
 
             await session.safeSendMessage(sender, {
-                video: { url: videoUrl },
-                caption: `✅ *${title}*`,
+                video: { url: result.download },
+                caption: `✅ *${result.title}*\n📈 Quality: ${result.quality}`,
                 mimetype: 'video/mp4',
                 contextInfo
             }, { quoted: message });
@@ -41,7 +34,7 @@ module.exports = {
         } catch (err) {
             console.error('ytmp4 error:', err.message);
             await session.safeSendMessage(sender, {
-                text: `❌ Video download failed: ${err.message}`,
+                text: `❌ Video download failed: ${err.message}\nTry again in a few moments.`,
                 contextInfo
             }, { quoted: message }).catch(() => {});
         }

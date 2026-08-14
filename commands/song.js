@@ -1,10 +1,7 @@
 const axios = require('axios');
 const yts = require('yt-search');
 
-const BASE = 'https://apis.xcasper.space/api';
-
 module.exports = async function(session, from, msg) {
-    const sock = session.sock;
     const body = (msg.message?.conversation || msg.message?.extendedTextMessage?.text || '').trim();
     const args = body.split(/ +/).slice(1);
     const query = args.join(' ').trim();
@@ -26,16 +23,18 @@ module.exports = async function(session, from, msg) {
             videoTitle = videos[0].title;
         }
 
-        await session.safeSendMessage(from, { text: `⏳ Fetching audio for *${videoTitle}*...` }, { quoted: msg });
+        await session.safeSendMessage(from, { text: `⏳ *Fetching audio for:* ${videoTitle}...` }, { quoted: msg });
 
-        const response = await axios.get(`${BASE}/ytmp3?url=${encodeURIComponent(videoUrl)}`, { timeout: 25000 });
-        const data = response.data;
-        if (!data || !data.status || !data.data || !data.data.download) {
-            throw new Error('Failed to retrieve audio download link from API.');
+        // Using a working audio API
+        const res = await axios.get(`https://api.siputzx.my.id/api/d/ummy?url=${encodeURIComponent(videoUrl)}`, { timeout: 20000 });
+        const data = res.data;
+        
+        if (!data || !data.status || !data.data || !data.data.audio) {
+            throw new Error('Failed to retrieve audio download link.');
         }
 
         await session.safeSendMessage(from, {
-            audio: { url: data.data.download },
+            audio: { url: data.data.audio },
             mimetype: 'audio/mpeg',
             fileName: `${data.data.title || videoTitle}.mp3`,
             ptt: false

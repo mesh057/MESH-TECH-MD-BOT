@@ -1,11 +1,10 @@
 'use strict';
 
 const axios = require('axios');
-const BASE = 'https://apis.xcasper.space/api';
 
 module.exports = {
-    commands: ['ytmp3', 'ytaudio'],
-    description: 'Download YouTube audio quickly via X-Casper API',
+    commands: ['ytmp3', 'ytaudio', 'yta'],
+    description: 'Download YouTube audio quickly',
     permission: 'public',
     group: true,
     private: true,
@@ -19,27 +18,22 @@ module.exports = {
             }, { quoted: message });
         }
 
-        await session.safeSendMessage(sender, { text: '⏳ Fetching audio...', contextInfo }, { quoted: message });
+        await session.safeSendMessage(sender, { text: '⏳ *Fetching audio... Please wait.*', contextInfo }, { quoted: message });
 
         try {
-            const response = await axios.get(`${BASE}/ytmp3?url=${encodeURIComponent(url)}`, { timeout: 25000 });
-            const data = response.data;
-            if (!data || !data.status || !data.data || !data.data.download) {
-                throw new Error('Failed to retrieve audio download link from API.');
+            // Using a working audio API
+            const res = await axios.get(`https://api.siputzx.my.id/api/d/ummy?url=${encodeURIComponent(url)}`, { timeout: 20000 });
+            const data = res.data;
+            
+            if (!data || !data.status || !data.data || !data.data.audio) {
+                throw new Error('Failed to retrieve audio download link.');
             }
 
-            const audioUrl = data.data.download;
-            const title = data.data.title || 'YouTube Audio';
-
             await session.safeSendMessage(sender, {
-                audio: { url: audioUrl },
+                audio: { url: data.data.audio },
                 mimetype: 'audio/mpeg',
+                fileName: `${data.data.title || 'audio'}.mp3`,
                 ptt: false,
-                contextInfo
-            }, { quoted: message });
-
-            await session.safeSendMessage(sender, {
-                text: `🎵 *${title}*`,
                 contextInfo
             }, { quoted: message });
 
