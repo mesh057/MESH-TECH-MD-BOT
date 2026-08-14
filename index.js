@@ -846,8 +846,17 @@ app.post("/api/restore-session", async (req, res) => {
 });
 
 app.get("/api/status", (req, res) => {
-    const totalActive = Object.values(sessions).filter(s => s.isConnected).length;
-    res.json({ botStatus: totalActive > 0 ? 'initialized' : 'not_initialized', totalActive });
+    const sessionList = Object.values(sessions).map(s => ({
+        userId: s.userId,
+        isConnected: s.isConnected,
+        isInitializing: s.isInitializing
+    }));
+    const totalActive = sessionList.filter(s => s.isConnected).length;
+    res.json({ 
+        botStatus: totalActive > 0 ? 'initialized' : 'not_initialized', 
+        totalActive,
+        sessions: sessionList 
+    });
 });
 
 app.post("/api/request-pairing", async (req, res) => {
