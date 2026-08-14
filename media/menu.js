@@ -45,7 +45,7 @@ function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0, metrics = {}) 
 ┃ 👥 𝗨𝘀𝗲𝗿𝘀: ${userCount} Active (𝗿𝗲𝗮𝗹-𝘁𝗶𝗺𝗲)
 ┃ 🤖 𝗕𝗼𝘁𝘀 𝗖𝗼𝗻𝗻𝗲𝗰𝘁𝗲𝗱: ${activeBots} 𝗟𝗶𝘃𝗲
 ┃ 📱 𝗗𝗲𝘃𝗶𝗰𝗲: ANDROID-CORE
-	┃ 🧠 RAM: ${randomRam}/128 GB
+┃ 🧠 RAM: ${randomRam}/128 GB
 ╰━━━━━━━━━━━━━━━━━━╯
 `;
 }
@@ -70,17 +70,17 @@ function formatGroup(title, emoji, commands) {
 function getMenu(timezone = 'Africa/Nairobi', userCount = 0, metrics = {}) {
     const statusBox = getStatusBox(timezone, userCount, metrics);
     
-    // MD-BOT uses hardcoded categories to match the user's requirement for a "professional UI"
     const groups = [
-        ['GENERAL', '✨', ['menu', 'help', 'ping', 'runtime', 'alive', 'repo', 'idcheck', 'google', 'spotify']],
-        ['OWNER', '👑', ['self', 'public', 'restart', 'shutdown', 'broadcast', 'save', 'join', 'leave']],
+        ['GENERAL', '✨', ['menu', 'help', 'ping', 'system', 'repo', 'idcheck', 'google', 'spotify', 'lyrics']],
+        ['OWNER', '👑', ['self', 'public', 'restart', 'shutdown', 'broadcast', 'save', 'join', 'leave', 'block', 'unblock']],
         ['DOWNLOAD', '📥', ['video', 'song', 'play', 'tiktok', 'ytmp3', 'ytmp4', 'insta', 'fb', 'img', 'apk']],
-        ['AUTO', '🪼', ['status', 'antidelete', 'antilink', 'autostatus', 'alwaysonline', 'autotyping', 'autorecording']],
-        ['AI', '⚡', ['ai', 'grok', 'mistral', 'casperai', 'chatgpt', 'imagine', 'remini']],
-        ['GROUP', '👥', ['kick', 'add', 'promote', 'demote', 'tagall', 'hidetag', 'welcome', 'warn']],
-        ['TOOLS', '☣️', ['sticker', 'toimg', 'qr', 'ss', 'shorten', 'calc', 'weather', 'vv']],
-        ['GAMES', '🎮', ['tictactoe', 'truth', 'dare', 'joke', 'fact', 'ship', 'hack']],
-        ['ANIME', '🎌', ['waifu', 'neko', 'shinobu', 'megumin', 'hug', 'kiss', 'slap', 'husbu']]
+        ['AUTO', '🪼', ['status', 'antidelete', 'antilink', 'autostatus', 'alwaysonline', 'autotyping', 'autorecoding']],
+        ['AI', '⚡', ['ai', 'grok', 'mistral', 'casperai', 'chatgpt', 'bible', 'quran', 'imagine', 'remini']],
+        ['GROUP', '👥', ['kick', 'add', 'promote', 'demote', 'tagall', 'hidetag', 'welcome', 'warn', 'ginfo']],
+        ['EDITORS', '🎨', ['fire', 'logo', 'glow', 'glass', 'balloon', 'neonlight', 'blackpink', 'dragonball', 'thunder', 'glitch', 'marvel']],
+        ['TOOLS', '☣️', ['sticker', 'toimg', 'qr', 'ss', 'shorten', 'ocr', 'tempmail', 'removebg', 'enlarger', 'calc', 'weather', 'vv']],
+        ['GAMES', '🎮', ['tictactoe', 'truth', 'dare', 'joke', 'fact', 'ship', 'hack', 'matrix']],
+        ['ANIME', '🎌', ['waifu', 'neko', 'shinobu', 'megumin', 'hug', 'kiss', 'slap', 'cry', 'dance', 'smile', 'husbu', 'kitsune', 'luffy', 'zoro']]
     ];
 
     const sections = groups.map(([title, emoji, cmds]) => formatGroup(title, emoji, cmds)).join('\n\n');
