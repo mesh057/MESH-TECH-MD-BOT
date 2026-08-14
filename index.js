@@ -203,6 +203,16 @@ class BotSession {
     async initialize(pairingNumber = null) {
         if (this.isInitializing || this.isDestroyed) return;
         this.isInitializing = true;
+
+        if (this.watchdogTimer) clearTimeout(this.watchdogTimer);
+        this.watchdogTimer = setTimeout(() => {
+            if (this.isInitializing && !this.isConnected) {
+                this.sendLog("Connection watchdog triggered. Forcing restart...");
+                this.isInitializing = false;
+                this.initialize(pairingNumber);
+            }
+        }, 120000); // 2 minutes
+
         try {
             const { version } = await fetchLatestBaileysVersion();
             const { state, saveCreds } = await useMultiFileAuthState(this.authPath);
@@ -632,6 +642,10 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
                     this.isConnected = false;
                     this.isInitializing = false;
+                    if (this.watchdogTimer) {
+                        clearTimeout(this.watchdogTimer);
+                        this.watchdogTimer = null;
+                    }
                     clearInterval(this.presenceTimer);
                     this.presenceTimer = null;
                     if (shouldReconnect && !this.isDestroyed) {
@@ -645,6 +659,10 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                 } else if (connection === 'open') {
                     this.isConnected = true;
                     this.isInitializing = false;
+                    if (this.watchdogTimer) {
+                        clearTimeout(this.watchdogTimer);
+                        this.watchdogTimer = null;
+                    }
                     const presenceSettings = botData.presenceSettings?.[this.userId];
                     if (presenceSettings?.alwaysOnline && presenceSettings.alwaysOnline !== 'off') {
                         await this.sock.sendPresenceUpdate('available').catch(() => {});
