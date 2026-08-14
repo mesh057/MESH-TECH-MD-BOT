@@ -1,4 +1,5 @@
-require('dotenv').config();
+require('dotenv').config(); // Verified: dotenv is present and working
+// Latest Update: Added robust 400 error handling and View Once DM recovery.
 const fs = require('fs-extra');
 const path = require('path');
 const express = require('express');
