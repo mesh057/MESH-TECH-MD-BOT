@@ -76,6 +76,24 @@ class BotSession {
         this.isProcessingQueue = false;
         this.welcomeSent = false; // Track if welcome message was sent
         this.presenceTimer = null;
+        this.reconnectTimer = null;
+        this.isDestroyed = false;
+    }
+
+    destroy() {
+        this.isDestroyed = true;
+        this.isConnected = false;
+        this.isInitializing = false;
+        if (this.presenceTimer) clearInterval(this.presenceTimer);
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+        if (this.sock) {
+            try {
+                this.sock.ev.removeAllListeners();
+                this.sock.logout().catch(() => {});
+                this.sock.end();
+            } catch (e) {}
+        }
+        this.sendLog('Session destroyed and cleaned up.');
     }
 
     async addToQueue(task) {
@@ -117,7 +135,7 @@ class BotSession {
     }
 
     async initialize(pairingNumber = null) {
-        if (this.isInitializing) return;
+        if (this.isInitializing || this.isDestroyed) return;
         this.isInitializing = true;
         try {
             const { version } = await fetchLatestBaileysVersion();
@@ -484,9 +502,10 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     this.isInitializing = false;
                     clearInterval(this.presenceTimer);
                     this.presenceTimer = null;
-                    if (shouldReconnect) {
+                    if (shouldReconnect && !this.isDestroyed) {
                         this.sendLog('Connection closed, reconnecting...');
-                        setTimeout(() => this.initialize(), 5000);
+                        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+                        this.reconnectTimer = setTimeout(() => this.initialize(), 5000);
                     }
                 } else if (connection === 'open') {
                     this.isConnected = true;
@@ -542,8 +561,12 @@ activePairings.delete(this.userId);
             });
         } catch (err) {
             this.isInitializing = false;
-            if (currentPairing.userId === this.userId) currentPairing.error = err.message;
-            setTimeout(() => this.initialize(), 10000);
+            const pairing = activePairings.get(this.userId);
+            if (pairing) pairing.error = err.message;
+            if (!this.isDestroyed) {
+                if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+                this.reconnectTimer = setTimeout(() => this.initialize(), 10000);
+            }
         }
     }
 }
@@ -622,10 +645,7 @@ app.post("/api/request-pairing", async (req, res) => {
 
         const userId = phoneNumber;
         if (sessions[userId]) {
-            if (sessions[userId].sock) {
-                try { sessions[userId].sock.logout(); } catch (e) {}
-                try { sessions[userId].sock.end(); } catch (e) {}
-            }
+            sessions[userId].destroy();
             delete sessions[userId];
         }
 
@@ -675,10 +695,7 @@ app.post("/api/request-qr", async (req, res) => {
         const userId = raw.replace(/[^0-9]/g, '') || 'default_qr';
 
         if (sessions[userId]) {
-            if (sessions[userId].sock) {
-                try { sessions[userId].sock.logout(); } catch (e) {}
-                try { sessions[userId].sock.end(); } catch (e) {}
-            }
+            sessions[userId].destroy();
             delete sessions[userId];
         }
 
