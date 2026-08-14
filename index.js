@@ -526,10 +526,10 @@ app.get("/api/status", (req, res) => {
     res.json({ botStatus: totalActive > 0 ? 'initialized' : 'not_initialized', totalActive });
 });
 
-app.all("/api/request-pairing", async (req, res) => {
+app.post("/api/request-pairing", async (req, res) => {
     try {
-        // Universal parameter detection: Body -> Query -> Raw String -> Headers
-        let raw = (req.body?.phoneNumber || req.query?.phoneNumber || '').toString();
+        // Universal parameter detection: Body -> Raw String -> Headers
+        let raw = (req.body?.phoneNumber || '').toString();
         if (!raw && req.rawBody) {
             const match = req.rawBody.match(/"phoneNumber":"?(\d+)"?/);
             if (match) raw = match[1];
@@ -571,6 +571,11 @@ activePairings.set(userId, { code: null, error: null, requestedAt: now });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }
+});
+
+// Explicit 405 handler for GET requests to the pairing API (as requested by support)
+app.get("/api/request-pairing", (req, res) => {
+    res.status(405).send("405 : Method not allowed");
 });
 
 app.get("/api/pairing-code", (req, res) => {
