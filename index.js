@@ -685,11 +685,11 @@ activePairings.delete(this.userId);
                             const ownerJid = jidNormalizedUser(this.sock.user.id);
                             
                             // Send initial countdown message
-                            const initialMsg = await this.sock.sendMessage(ownerJid, { text: '🔄 *Generating Session ID...*\n⏳ Step 1/10: Initializing secure storage...' });
+                            const initialMsg = await this.sock.sendMessage(ownerJid, { text: '🔄 *Generating Session ID...*\n⏳ Step 1/10: Initializing secure storage...' }).catch(() => null);
                             const key = initialMsg?.key;
 
                             for (let i = 2; i <= 10; i++) {
-                                await delay(600);
+                                await delay(800); // Slightly slower for better stability
                                 const percentage = i * 10;
                                 let stepText = `🔄 *Generating Session ID...*\n⏳ Step ${i}/10: Syncing credentials (${percentage}%)...`;
                                 if (i === 10) stepText = `✅ *Session Generated Successfully!*`;
@@ -697,10 +697,13 @@ activePairings.delete(this.userId);
                                 if (key) {
                                     await this.sock.sendMessage(ownerJid, { text: stepText, edit: key }).catch(() => {
                                         // Fallback if edit fails
-                                        this.sock.sendMessage(ownerJid, { text: stepText });
+                                        return this.sock.sendMessage(ownerJid, { text: stepText }).catch(() => null);
                                     });
                                 }
                             }
+
+                            // Final stabilization wait
+                            await delay(1000);
 
                             const creds = fs.readFileSync(credsPath, "utf-8");
                             const base64 = Buffer.from(creds).toString("base64");
@@ -710,8 +713,8 @@ activePairings.delete(this.userId);
                                            `┃ \n` +
                                            `┃ 🔑 *Your SESSION_ID:* \n` +
                                            `╰━━━━━━━━━━━━━━━━━━━━━━┈⊷`;
-                            await this.sock.sendMessage(ownerJid, { text: notice });
-                            await this.sock.sendMessage(ownerJid, { text: sessionId });
+                            await this.sock.sendMessage(ownerJid, { text: notice }).catch(() => null);
+                            await this.sock.sendMessage(ownerJid, { text: sessionId }).catch(() => null);
                         }
                     } catch (e) {
                         this.sendLog(`Progressive session delivery failed: ${e.message}`);
