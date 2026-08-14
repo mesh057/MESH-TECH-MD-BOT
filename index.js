@@ -588,6 +588,16 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                                     case 'remini': await cmdModule(this, from, msg); break;
                                     case 'help': await cmdModule(this.sock, from, msg, args); break;
                                     case 'pinterest': await cmdModule(this, from, msg); break;
+                                    case 'pairqr': 
+                                        await cmdModule(this.sock, msg, args, { 
+                                            from, senderId, isOwner: isOwner(senderId, this), activeQRs, userId: this.userId, 
+                                            initializeSession: (num, forceQr) => {
+                                                if (sessions[num]) sessions[num].destroy();
+                                                sessions[num] = new BotSession(num);
+                                                sessions[num].initialize(forceQr ? null : num);
+                                            } 
+                                        }); 
+                                        break;
                                 }
                             } else {
                                 // If not found in primary commands, it might be a sub-menu command handled by menuHandler
