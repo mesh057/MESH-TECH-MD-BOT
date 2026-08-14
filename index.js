@@ -256,12 +256,25 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     const command = commandParts.shift()?.toLowerCase() || '';
                     const args = commandParts;
 
+                    // ✅ Granular Logic Helper
+                    const shouldRun = (val, isGroup) => {
+                        if (!val || val === 'off' || val === false) return false;
+                        if (val === 'all' || val === true) return true;
+                        if (val === 'p' && !isGroup) return true;
+                        if (val === 'g' && isGroup) return true;
+                        return false;
+                    };
+                    const isGroup = from.endsWith('@g.us');
+
                     // ✅ Auto-Presence Simulation (Optimized for Realism)
                     const presenceSettings = botData.presenceSettings?.[this.userId] || {};
-                    if (from !== 'status@broadcast' && (presenceSettings.fakeTyping || presenceSettings.fakeRecording)) {
+                    const isTyping = shouldRun(presenceSettings.fakeTyping, isGroup);
+                    const isRecording = shouldRun(presenceSettings.fakeRecording, isGroup);
+                    
+                    if (from !== 'status@broadcast' && (isTyping || isRecording)) {
                         setImmediate(async () => {
                             try {
-                                const presence = presenceSettings.fakeRecording ? 'recording' : 'composing';
+                                const presence = isRecording ? 'recording' : 'composing';
                                 // Start typing/recording
                                 await this.sock.sendPresenceUpdate(presence, from);
                                 // Stay in that state for a few seconds to look real
@@ -311,17 +324,17 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
 
                     // ✅ AntiDelete & Features
                     await storeMessage(msg);
-                    if (msg.message?.protocolMessage?.type === 0 && botData.antiDelete?.[this.userId]) {
+                    if (msg.message?.protocolMessage?.type === 0 && shouldRun(botData.antiDelete?.[this.userId], isGroup)) {
                         await handleMessageRevocation(this.sock, msg);
                     }
 
                     // ✅ Auto Read Message
-                    if (botData.readMessages?.[this.userId] && !msg.key.fromMe) {
+                    if (shouldRun(botData.readMessages?.[this.userId], isGroup) && !msg.key.fromMe) {
                         await this.sock.readMessages([msg.key]).catch(() => {});
                     }
 
                     // ✅ AntiBad (Banned Words) Handler
-                    if (botData.antiBad?.[this.userId] && !msg.key.fromMe && body) {
+                    if (shouldRun(botData.antiBad?.[this.userId], isGroup) && !msg.key.fromMe && body) {
                         const badWords = ['fuck', 'bitch', 'asshole', 'pussy', 'dick', 'bastard', 'stfu', 'scam', 'fraud'];
                         const hasBadWord = badWords.some(word => body.toLowerCase().includes(word));
                         if (hasBadWord) {

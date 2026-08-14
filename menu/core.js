@@ -26,12 +26,30 @@ function ensurePresenceSettings(botData, userId) {
 }
 
 async function togglePresenceFeature({ reply, args, botData, saveBotData, sender, sessionId }, feature, label) {
-    const value = args[0]?.toLowerCase();
+    const mode = args[0]?.toLowerCase();
     const settings = ensurePresenceSettings(botData, sessionId || sender);
-    if (!['on', 'off'].includes(value)) return reply(`❓ Usage: .${feature} on/off`);
-    settings[feature] = value === 'on';
+    const currentMode = settings[feature] || 'off';
+
+    if (!mode || !['on', 'off', 'p', 'g', 'all'].includes(mode)) {
+        return reply(`╭━━━〔 *${label.toUpperCase()} SETUP* 〕━━━┈⊷\n` +
+                     `┃ ⋄ *Status:* ${currentMode === 'off' || !currentMode ? '❌ Disabled' : '✅ Active (' + String(currentMode).toUpperCase() + ')'}\n` +
+                     `┃\n` +
+                     `┃ ⋄ *.${feature} p* - Private DMs only\n` +
+                     `┃ ⋄ *.${feature} g* - Groups only\n` +
+                     `┃ ⋄ *.${feature} all* - Everywhere\n` +
+                     `┃ ⋄ *.${feature} off* - Disable\n` +
+                     `╰━━━━━━━━━━━━━━━━━━┈⊷`);
+    }
+
+    let setMode = mode;
+    if (mode === 'on') setMode = 'all';
+    if (mode === 'off') setMode = false;
+    
+    settings[feature] = setMode;
     saveBotData();
-    return reply(`${value === 'on' ? '✅' : '❌'} *${label}: ${value.toUpperCase()}*`);
+    
+    const labelText = setMode === 'all' ? 'Everywhere' : (setMode === 'p' ? 'Private' : (setMode === 'g' ? 'Groups' : 'OFF'));
+    return reply(`✅ *${label} set to: ${labelText}*`);
 }
 
 async function forwardCommand(session, modulePath, jid, msg, args = []) {
@@ -2336,12 +2354,50 @@ const core = {
     antibug: async ({ reply }) => pendingFeature(reply, 'antibug', 'Anti-bug protections are registered; message-specific protections will be added next.'),
     autogreet: async ({ reply }) => pendingFeature(reply, 'autogreet', 'Automatic greeting integration is registered; group-event customization will be added next.'),
     autoread: async ({ reply, botData, saveBotData, sessionId, args }) => {
-        const value = args[0]?.toLowerCase();
-        if (!['on', 'off'].includes(value)) return reply('❓ Usage: .autoread on/off');
-        botData.autoRead = botData.autoRead || {};
-        botData.autoRead[sessionId] = value === 'on';
+        const mode = args[0]?.toLowerCase();
+        const current = botData.readMessages?.[sessionId] || 'off';
+        if (!mode || !['on', 'off', 'p', 'g', 'all'].includes(mode)) {
+            return reply(`╭━━━〔 *AUTO-READ SETUP* 〕━━━┈⊷\n` +
+                         `┃ ⋄ *Status:* ${current === 'off' ? '❌ Disabled' : '✅ Active (' + String(current).toUpperCase() + ')'}\n` +
+                         `┃\n` +
+                         `┃ ⋄ *.autoread p* - Private DMs only\n` +
+                         `┃ ⋄ *.autoread g* - Groups only\n` +
+                         `┃ ⋄ *.autoread all* - Everywhere\n` +
+                         `┃ ⋄ *.autoread off* - Disable\n` +
+                         `╰━━━━━━━━━━━━━━━━━━┈⊷`);
+        }
+        botData.readMessages = botData.readMessages || {};
+        botData.readMessages[sessionId] = (mode === 'on' ? 'all' : (mode === 'off' ? false : mode));
         saveBotData();
-        return reply(`✅ Auto-read: ${value.toUpperCase()}`);
+        const label = botData.readMessages[sessionId] === 'all' ? 'Everywhere' : (botData.readMessages[sessionId] === 'p' ? 'Private' : (botData.readMessages[sessionId] === 'g' ? 'Groups' : 'OFF'));
+        return reply(`✅ *Auto-Read set to: ${label}*`);
+    },
+    antibad: async ({ reply, botData, saveBotData, sessionId, args }) => {
+        const mode = args[0]?.toLowerCase();
+        const current = botData.antiBad?.[sessionId] || 'off';
+        if (!mode || !['on', 'off', 'p', 'g', 'all'].includes(mode)) {
+            return reply(`╭━━━〔 *ANTI-BAD SETUP* 〕━━━┈⊷\n` +
+                         `┃ ⋄ *Status:* ${current === 'off' ? '❌ Disabled' : '✅ Active (' + String(current).toUpperCase() + ')'}\n` +
+                         `┃\n` +
+                         `┃ ⋄ *.antibad p* - Private DMs only\n` +
+                         `┃ ⋄ *.antibad g* - Groups only\n` +
+                         `┃ ⋄ *.antibad all* - Everywhere\n` +
+                         `┃ ⋄ *.antibad off* - Disable\n` +
+                         `╰━━━━━━━━━━━━━━━━━━┈⊷`);
+        }
+        botData.antiBad = botData.antiBad || {};
+        botData.antiBad[sessionId] = (mode === 'on' ? 'all' : (mode === 'off' ? false : mode));
+        saveBotData();
+        const label = botData.antiBad[sessionId] === 'all' ? 'Everywhere' : (botData.antiBad[sessionId] === 'p' ? 'Private' : (botData.antiBad[sessionId] === 'g' ? 'Groups' : 'OFF'));
+        return reply(`✅ *Anti-Bad Words set to: ${label}*`);
+    },
+    autoreact: async (context) => {
+        const autoreactsCommand = require('./autoreacts');
+        return autoreactsCommand(context.conn, context.jid, context.m, true, context.botData, context.saveBotData, context.sessionId, context.args);
+    },
+    antidelete: async (context) => {
+        const antideleteCommand = require('./antidelete');
+        return antideleteCommand(context.conn, context.jid, context.m, true, context.botData, context.saveBotData, context.sessionId, context.args);
     },
 
 };
