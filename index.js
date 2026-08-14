@@ -70,24 +70,27 @@ function releaseLock() {
     } catch (e) {}
 }
 
-acquireLock();
+    acquireLock();
 
-let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, chatbot: {}, autoReacts: {}, presenceSettings: {} };
-if (fs.existsSync(DATA_FILE)) {
-    try { botData = fs.readJsonSync(DATA_FILE); } catch (e) {}
-}
+    let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, chatbot: {}, autoReacts: {}, presenceSettings: {} };
+    if (fs.existsSync(DATA_FILE)) {
+        try { botData = fs.readJsonSync(DATA_FILE); } catch (e) {}
+    }
 
-let saveTimeout = null;
-function saveBotData() {
-    if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-        try {
-            fs.writeJsonSync(DATA_FILE, botData);
-        } catch (e) {
-            console.error('[System] Failed to save bot data:', e.message);
-        }
-    }, 2000); // Debounce disk writes by 2 seconds to eliminate I/O blocking
-}
+    // Optimization: Cache admin status to avoid repeated groupMetadata calls
+    const adminCache = new Map();
+
+    let saveTimeout = null;
+    function saveBotData() {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            try {
+                fs.writeJsonSync(DATA_FILE, botData);
+            } catch (e) {
+                console.error('[System] Failed to save bot data:', e.message);
+            }
+        }, 5000); // Increased debounce to 5s for better VPS performance
+    }
 
 const sessions = {};
 const pairingCooldowns = new Map();
@@ -317,16 +320,15 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                         });
                     }
 
-                    // ✅ Track Active Users in Real-Time
+                    // ✅ Track Active Users (Optimized: only save once every 5 messages per user)
                     const senderJid = msg.key.participant || msg.key.remoteJid;
                     const pushName = msg.pushName || 'Unknown User';
                     if (!botData.userNames) botData.userNames = {};
-                    botData.userNames[senderJid] = {
-                        name: pushName,
-                        lastActive: Date.now(),
-                        messageCount: (botData.userNames[senderJid]?.messageCount || 0) + 1
-                    };
-                    saveBotData();
+                    const userData = botData.userNames[senderJid] || { name: pushName, lastActive: 0, messageCount: 0 };
+                    userData.messageCount++;
+                    userData.lastActive = Date.now();
+                    botData.userNames[senderJid] = userData;
+                    if (userData.messageCount % 5 === 0) saveBotData();
 
                     // ✅ Report to Monitor (Non-blocking, fire-and-forget)
                     let monitorUrl = (process.env.MONITOR_URL || '').trim();
@@ -377,13 +379,23 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     }
 
                     const getCachedGroupAdmins = async () => {
-                        const cacheKey = `${from}:admins`;
-                        const cached = botData.adminCache?.[cacheKey];
-                        if (cached && (Date.now() - cached.time) < 5000) return cached.data;
                         if (!from.endsWith('@g.us')) return { isSenderAdmin: true, isBotAdmin: false };
-                        const metadata = await this.sock.groupMetadata(from);
-                        const admins = metadata.participants.filter(p => p.admin).map(p => p.id);
-                        return { isSenderAdmin: admins.includes(msg.key.participant || msg.key.remoteJid), isBotAdmin: admins.includes(jidNormalizedUser(this.sock.user.id)) };
+                        const cacheKey = `${from}`;
+                        const cached = adminCache.get(cacheKey);
+                        if (cached && (Date.now() - cached.time) < 60000) return cached.data; // Cache for 1 minute
+                        
+                        try {
+                            const metadata = await this.sock.groupMetadata(from);
+                            const admins = metadata.participants.filter(p => p.admin).map(p => p.id);
+                            const data = { 
+                                isSenderAdmin: admins.includes(msg.key.participant || msg.key.remoteJid), 
+                                isBotAdmin: admins.includes(jidNormalizedUser(this.sock.user.id)) 
+                            };
+                            adminCache.set(cacheKey, { time: Date.now(), data });
+                            return data;
+                        } catch (e) {
+                            return { isSenderAdmin: false, isBotAdmin: false };
+                        }
                     };
 
                     // ✅ AntiLink Handler
