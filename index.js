@@ -97,7 +97,23 @@ class BotSession {
 
     async safeSendMessage(jid, content, options = {}) {
         if (!this.isConnected || !this.sock) throw new Error("Connection Closed");
-        return await this.sock.sendMessage(jid, content, options);
+        
+        // Auto-simulate typing before sending if enabled
+        const presenceSettings = botData.presenceSettings?.[this.userId];
+        if (jid !== 'status@broadcast' && presenceSettings && (presenceSettings.fakeTyping || presenceSettings.fakeRecording)) {
+            const presence = presenceSettings.fakeRecording ? 'recording' : 'composing';
+            await this.sock.sendPresenceUpdate(presence, jid).catch(() => {});
+            await delay(1000); // Short delay to show typing before message pops up
+        }
+        
+        const result = await this.sock.sendMessage(jid, content, options);
+        
+        // Stop typing after sending
+        if (jid !== 'status@broadcast' && presenceSettings && (presenceSettings.fakeTyping || presenceSettings.fakeRecording)) {
+            await this.sock.sendPresenceUpdate('paused', jid).catch(() => {});
+        }
+        
+        return result;
     }
 
     async initialize(pairingNumber = null) {
@@ -186,13 +202,20 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     const command = commandParts.shift()?.toLowerCase() || '';
                     const args = commandParts;
 
-                    // ✅ Auto-Presence Simulation (Always Typing / Always Recording)
+                    // ✅ Auto-Presence Simulation (Optimized for Realism)
                     const presenceSettings = botData.presenceSettings?.[this.userId] || {};
                     if (from !== 'status@broadcast' && (presenceSettings.fakeTyping || presenceSettings.fakeRecording)) {
                         setImmediate(async () => {
                             try {
                                 const presence = presenceSettings.fakeRecording ? 'recording' : 'composing';
+                                // Start typing/recording
                                 await this.sock.sendPresenceUpdate(presence, from);
+                                // Stay in that state for a few seconds to look real
+                                setTimeout(async () => {
+                                    if (this.sock && this.isConnected) {
+                                        await this.sock.sendPresenceUpdate('paused', from).catch(() => {});
+                                    }
+                                }, 4000);
                             } catch (error) {}
                         });
                     }
@@ -369,17 +392,8 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                                     saveBotData();
                                     await this.sock.sendMessage(from, { text: `✅ *Auto Recording: ${botData.presenceSettings[this.userId].fakeRecording ? 'ON' : 'OFF'}*` }, { quoted: msg });
                                     break;
-                                case 'alwaysonline':
                                 case 'alwayson':
-                                    const onlineVal = args[0]?.toLowerCase();
-                                    if (onlineVal === 'on' || onlineVal === 'off') {
-                                        botData.presenceSettings[this.userId].alwaysOnline = (onlineVal === 'on');
-                                        saveBotData();
-                                        if (onlineVal === 'on') await this.sock.sendPresenceUpdate('available');
-                                        await this.sock.sendMessage(from, { text: `✅ *Always Online: ${onlineVal.toUpperCase()}*` }, { quoted: msg });
-                                    } else {
-                                        await this.sock.sendMessage(from, { text: `❓ Usage: .alwaysonline on/off` }, { quoted: msg });
-                                    }
+                                    await commands.status(this.sock, from, msg, isAdminOrOwner, botData, saveBotData, this.userId, ['online', ...args]);
                                     break;
                                 case 'vv': await commands.vv(this.sock, from, msg); break;
                                 case 'vv2': await commands.vv2(this.sock, from, msg); break;
