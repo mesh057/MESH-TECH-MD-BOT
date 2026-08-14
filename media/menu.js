@@ -72,13 +72,13 @@ function getMenu(timezone = 'Africa/Nairobi', userCount = 0, metrics = {}) {
     
     // MD-BOT uses hardcoded categories to match the user's requirement for a "professional UI"
     const groups = [
-        ['GENERAL', '✨', ['menu', 'help', 'ping', 'runtime', 'alive', 'repo', 'idcheck']],
+        ['GENERAL', '✨', ['menu', 'help', 'ping', 'runtime', 'alive', 'repo', 'idcheck', 'google', 'spotify']],
         ['OWNER', '👑', ['self', 'public', 'restart', 'shutdown', 'broadcast', 'save', 'join', 'leave']],
-        ['DOWNLOAD', '📥', ['video', 'song', 'play', 'tiktok', 'insta', 'fb', 'img', 'apk']],
+        ['DOWNLOAD', '📥', ['video', 'song', 'play', 'tiktok', 'ytmp3', 'ytmp4', 'insta', 'fb', 'img', 'apk']],
         ['AUTO', '🪼', ['status', 'antidelete', 'antilink', 'autostatus', 'alwaysonline', 'autotyping', 'autorecording']],
-        ['AI', '⚡', ['chatgpt', 'llama', 'deepseek', 'gemini', 'claude', 'imagine', 'remini']],
+        ['AI', '⚡', ['ai', 'grok', 'mistral', 'casperai', 'chatgpt', 'imagine', 'remini']],
         ['GROUP', '👥', ['kick', 'add', 'promote', 'demote', 'tagall', 'hidetag', 'welcome', 'warn']],
-        ['TOOLS', '☣️', ['sticker', 'toimg', 'trt', 'calc', 'weather', 'shorturl', 'vv']],
+        ['TOOLS', '☣️', ['sticker', 'toimg', 'qr', 'ss', 'shorten', 'calc', 'weather', 'vv']],
         ['GAMES', '🎮', ['tictactoe', 'truth', 'dare', 'joke', 'fact', 'ship', 'hack']],
         ['ANIME', '🎌', ['waifu', 'neko', 'shinobu', 'megumin', 'hug', 'kiss', 'slap', 'husbu']]
     ];
