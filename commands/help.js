@@ -1,3 +1,5 @@
+'use strict';
+
 const toBold = (text) => {
     const boldChars = {
         'a': '𝗮', 'b': '𝗯', 'c': '𝗰', 'd': '𝗱', 'e': '𝗲', 'f': '𝗳', 'g': '𝗴', 'h': '𝗵', 'i': '𝗶', 'j': '𝗷', 'k': '𝗸', 'l': '𝗹', 'm': '𝗺', 'n': '𝗻', 'o': '𝗼', 'p': '𝗽', 'q': '𝗾', 'r': '𝗿', 's': '𝘀', 't': '𝘁', 'u': '𝘂', 'v': '𝘃', 'w': '𝘄', 'x': '𝘅', 'y': '𝘆', 'z': '𝘇',
@@ -6,6 +8,12 @@ const toBold = (text) => {
     };
     return text.split('').map(c => boldChars[c] || c).join('');
 };
+
+const MARKERS = ['➊', '➋', '➌', '➍', '➎', '➏', '➐', '➑', '➒', '➓'];
+
+function numberedLine(index, command) {
+    return `║${MARKERS[index] || `${index + 1}.`} ⟿ .${command}`;
+}
 
 const pages = [
     // Page 1: How to Use
@@ -25,7 +33,7 @@ const pages = [
 ┃ 🚀 *Start exploring by clicking ➡️ below!*
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
 
-    // Page 2: Index
+    // Page 2: Help Index
     `╭━━━〔 ${toBold("MESH-TECH MD BOT - HELP INDEX")} 〕━━━┈⊷
 ┃ 📄 *Page 1:* How to Use
 ┃ 📑 *Page 2:* Help Index
@@ -41,119 +49,117 @@ const pages = [
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
 
     // Page 3: Owner Menu
-    `╭━━━〔 ${toBold("3. OWNER MENU (PAGE 3/11)")} 〕━━━┈⊷
-┃ • .self - Bot only responds to you
-┃ • .public - Bot responds to everyone
-┃ • .block / .unblock - User management
-┃ • .restart - Reboot the bot instance
-┃ • .shutdown - Turn off the bot
-┃ • .setbio / .setname / .setpp - Profile
-┃ • .join / .leave - Group control
-┃ • .broadcast - Send msg to all chats
-┃ • .kickall - Clean group members
-┃ • .del - Delete any bot message
-┃ • .idcheck - Get chat/user IDs
-┃ • .save - Save status/media to DM
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
+    `╔═❖•⊰ 👑 *OWNER MENU* ⊱•❖═╗
+${numberedLine(0, 'self - Bot only responds to you')}
+${numberedLine(1, 'public - Bot responds to everyone')}
+${numberedLine(2, 'block / .unblock - User management')}
+${numberedLine(3, 'restart - Reboot the bot instance')}
+${numberedLine(4, 'shutdown - Turn off the bot')}
+${numberedLine(5, 'setbio / .setname / .setpp - Profile')}
+${numberedLine(6, 'join / .leave - Group control')}
+${numberedLine(7, 'broadcast - Send msg to all chats')}
+${numberedLine(8, 'kickall - Clean group members')}
+${numberedLine(9, 'del - Delete any bot message')}
+╚════════════════════╝`,
 
     // Page 4: Download Menu
-    `╭━━━〔 ${toBold("4. DOWNLOAD MENU (PAGE 4/11)")} 〕━━━┈⊷
-┃ • .video / .video2 - YouTube Video
-┃ • .song / .song2 / .play - Audio/Music
-┃ • .ytmp4 / .ytmp3 - YT Converters
-┃ • .tiktok - TikTok No Watermark
-┃ • .insta - Instagram Reels/Posts
-┃ • .fb - Facebook Video Downloader
-┃ • .gitclone - Clone GitHub Repos
-┃ • .img - Google Image Search
-┃ • .apk - Android App Downloader
-┃ • .pinterest - Pinterest Media
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
+    `╔═❖•⊰ 📥 *DOWNLOAD MENU* ⊱•❖═╗
+${numberedLine(0, 'video / .video2 - YouTube Video')}
+${numberedLine(1, 'song / .song2 / .play - Audio/Music')}
+${numberedLine(2, 'ytmp4 / .ytmp3 - YT Converters')}
+${numberedLine(3, 'tiktok - TikTok No Watermark')}
+${numberedLine(4, 'insta - Instagram Reels/Posts')}
+${numberedLine(5, 'fb - Facebook Video Downloader')}
+${numberedLine(6, 'gitclone - Clone GitHub Repos')}
+${numberedLine(7, 'img - Google Image Search')}
+${numberedLine(8, 'apk - Android App Downloader')}
+${numberedLine(9, 'pinterest - Pinterest Media')}
+╚════════════════════╝`,
 
     // Page 5: Auto Menu
-    `╭━━━〔 ${toBold("5. AUTO MENU (PAGE 5/11)")} 〕━━━┈⊷
-┃ • .status - View/Set all automation
-┃ • .antidelete [on/off] - Recover msgs
-┃ • .antilink [on/off] - Group link protection
-┃ • .anticall [on/off] - Block incoming calls
-┃ • .autostatus [on/off] - View statuses
-┃ • .autoreact [p/g/all/off] - Auto reactions
-┃ • .alwaysonline [p/g/all/off] - Stay online
-┃ • .autotyping [p/g/all/off] - Fake typing
-┃ • .autorecording [p/g/all/off] - Fake record
-┃ • .autoreplystatus [on/off] - Status reply
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
+    `╔═❖•⊰ 🪼 *AUTO MENU* ⊱•❖═╗
+${numberedLine(0, 'status - View/Set all automation')}
+${numberedLine(1, 'antidelete [on/off] - Recover msgs')}
+${numberedLine(2, 'antilink [on/off] - Group link protection')}
+${numberedLine(3, 'anticall [on/off] - Block incoming calls')}
+${numberedLine(4, 'autostatus [on/off] - View statuses')}
+${numberedLine(5, 'autoreact [p/g/all/off] - Auto reactions')}
+${numberedLine(6, 'alwaysonline [p/g/all/off] - Stay online')}
+${numberedLine(7, 'autotyping [p/g/all/off] - Fake typing')}
+${numberedLine(8, 'autorecoding [p/g/all/off] - Fake record')}
+${numberedLine(9, 'autoreplystatus [on/off] - Status reply')}
+╚════════════════════╝`,
 
     // Page 6: AI Menu
-    `╭━━━〔 ${toBold("6. AI MENU (PAGE 6/11)")} 〕━━━┈⊷
-┃ • .chatgpt [prompt] - Open AI ChatGPT
-┃ • .llama [prompt] - Meta Llama 3
-┃ • .deepseek [prompt] - DeepSeek AI
-┃ • .gemini [prompt] - Google Gemini
-┃ • .claude [prompt] - Anthropic Claude
-┃ • .chatbot [on/off] - Auto AI reply
-┃ • .remini - Enhance blurry images
-┃ • .imagine - AI Image Generation
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
+    `╔═❖•⊰ ⚡ *AI MENU* ⊱•❖═╗
+${numberedLine(0, 'chatgpt [prompt] - Open AI ChatGPT')}
+${numberedLine(1, 'llama [prompt] - Meta Llama 3')}
+${numberedLine(2, 'deepseek [prompt] - DeepSeek AI')}
+${numberedLine(3, 'gemini [prompt] - Google Gemini')}
+${numberedLine(4, 'claude [prompt] - Anthropic Claude')}
+${numberedLine(5, 'chatbot [on/off] - Auto AI reply')}
+${numberedLine(6, 'remini - Enhance blurry images')}
+${numberedLine(7, 'imagine - AI Image Generation')}
+╚════════════════════╝`,
 
     // Page 7: Group Menu
-    `╭━━━〔 ${toBold("7. GROUP MENU (PAGE 7/11)")} 〕━━━┈⊷
-┃ • .kick / .add - Member management
-┃ • .promote / .demote - Admin control
-┃ • .open / .close - Group privacy
-┃ • .tagall - Mention every member
-┃ • .hidetag [text] - Ghost mention
-┃ • .welcome [on/off] - Welcome message
-┃ • .ginfo - Detailed group info
-┃ • .warn - Warn members (3 = kick)
-┃ • .listactive - Show active users
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
+    `╔═❖•⊰ 👥 *GROUP MENU* ⊱•❖═╗
+${numberedLine(0, 'kick / .add - Member management')}
+${numberedLine(1, 'promote / .demote - Admin control')}
+${numberedLine(2, 'open / .close - Group privacy')}
+${numberedLine(3, 'tagall - Mention every member')}
+${numberedLine(4, 'hidetag [text] - Ghost mention')}
+${numberedLine(5, 'welcome [on/off] - Welcome message')}
+${numberedLine(6, 'ginfo - Detailed group info')}
+${numberedLine(7, 'warn - Warn members (3 = kick)')}
+${numberedLine(8, 'listactive - Show active users')}
+╚════════════════════╝`,
 
     // Page 8: Logo Menu
-    `╭━━━〔 ${toBold("8. LOGO MENU (PAGE 8/11)")} 〕━━━┈⊷
-┃ • .logo [text] - Custom branding
-┃ • .neonlight - Neon text effect
-┃ • .blackpink - BP style logo
-┃ • .dragonball - DBZ text effect
-┃ • .thunder - Lightning effect
-┃ • .glitch - Glitch text style
-┃ • .marvel - Marvel studio logo
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
+    `╔═❖•⊰ 🎨 *LOGO MENU* ⊱•❖═╗
+${numberedLine(0, 'logo [text] - Custom branding')}
+${numberedLine(1, 'neonlight - Neon text effect')}
+${numberedLine(2, 'blackpink - BP style logo')}
+${numberedLine(3, 'dragonball - DBZ text effect')}
+${numberedLine(4, 'thunder - Lightning effect')}
+${numberedLine(5, 'glitch - Glitch text style')}
+${numberedLine(6, 'marvel - Marvel studio logo')}
+╚════════════════════╝`,
 
     // Page 9: Tools & Utility
-    `╭━━━〔 ${toBold("9. TOOLS & UTILITY (PAGE 9/11)")} 〕━━━┈⊷
-┃ • .sticker / .s - Image to Sticker
-┃ • .toimg - Sticker to Image
-┃ • .tovideo - Sticker to Video
-┃ • .qc - Create chat bubble quote
-┃ • .trt [lang] [text] - Translate
-┃ • .calc - Calculator tool
-┃ • .weather - Local weather info
-┃ • .shorturl - Link shortener
-┃ • .vv / .vv2 - View Once bypass
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
+    `╔═❖•⊰ ☣️ *TOOLS & UTILITY* ⊱•❖═╗
+${numberedLine(0, 'sticker / .s - Image to Sticker')}
+${numberedLine(1, 'toimg - Sticker to Image')}
+${numberedLine(2, 'tovideo - Sticker to Video')}
+${numberedLine(3, 'qc - Create chat bubble quote')}
+${numberedLine(4, 'trt [lang] [text] - Translate')}
+${numberedLine(5, 'calc - Calculator tool')}
+${numberedLine(6, 'weather - Local weather info')}
+${numberedLine(7, 'shorturl - Link shortener')}
+${numberedLine(8, 'vv / .vv2 - View Once bypass')}
+╚════════════════════╝`,
 
     // Page 10: Games & Fun
-    `╭━━━〔 ${toBold("10. GAMES & FUN (PAGE 10/11)")} 〕━━━┈⊷
-┃ • .tictactoe - Play with friends
-┃ • .truth / .dare - Party game
-┃ • .joke - Random funny jokes
-┃ • .fact - Interesting facts
-┃ • .ship - Love percentage
-┃ • .hack - Fake hacking effect
-┃ • .matrix - Matrix text effect
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`,
+    `╔═❖•⊰ 🎮 *GAMES & FUN* ⊱•❖═╗
+${numberedLine(0, 'tictactoe - Play with friends')}
+${numberedLine(1, 'truth / .dare - Party game')}
+${numberedLine(2, 'joke - Random funny jokes')}
+${numberedLine(3, 'fact - Interesting facts')}
+${numberedLine(4, 'ship - Love percentage')}
+${numberedLine(5, 'hack - Fake hacking effect')}
+${numberedLine(6, 'matrix - Matrix text effect')}
+╚════════════════════╝`,
 
     // Page 11: Anime Menu
-    `╭━━━〔 ${toBold("11. ANIME MENU (PAGE 11/11)")} 〕━━━┈⊷
-┃ • .waifu / .neko - Anime girls
-┃ • .shinobu / .megumin - Characters
-┃ • .hug / .kiss / .slap - Reactions
-┃ • .cry / .dance / .smile - Actions
-┃ • .husbu - Anime boys
-┃ • .kitsune - Fox girls
-┃ • .luffy / .zoro - One Piece
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━┈⊷`
+    `╔═❖•⊰ 🎌 *ANIME MENU* ⊱•❖═╗
+${numberedLine(0, 'waifu / .neko - Anime girls')}
+${numberedLine(1, 'shinobu / .megumin - Characters')}
+${numberedLine(2, 'hug / .kiss / .slap - Reactions')}
+${numberedLine(3, 'cry / .dance / .smile - Actions')}
+${numberedLine(4, 'husbu - Anime boys')}
+${numberedLine(5, 'kitsune - Fox girls')}
+${numberedLine(6, 'luffy / .zoro - One Piece')}
+╚════════════════════╝`
 ];
 
 // Active help sessions store: messageId -> { pageNum, author }
