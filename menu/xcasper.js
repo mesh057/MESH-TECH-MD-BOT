@@ -191,6 +191,22 @@ const xcasper = {
         if (res.data.status) {
             reply(`😂 *Joke:*\n\n${res.data.data.joke || res.data.data}`);
         } else reply('❌ Failed to fetch joke.');
+    },
+
+    fire: async ({ conn, m, args, jid, reply }) => {
+        const text = args.join(' ');
+        if (!text) return reply('❌ Provide text for fire effect!\nExample: `.fire MESH`');
+        reply('⏳ *Generating fire text...*');
+        const imgUrl = `${BASE_URL}/fire-text?text=${encodeURIComponent(text)}`;
+        await conn.sendMessage(jid, { image: { url: imgUrl }, caption: '🔥 *Fire Text Effect*' }, { quoted: m });
+    },
+
+    logo: async ({ conn, m, args, jid, reply }) => {
+        const text = args.join(' ');
+        if (!text) return reply('❌ Provide text for gaming logo!\nExample: `.logo MESH`');
+        reply('⏳ *Generating gaming logo...*');
+        const imgUrl = `${BASE_URL}/game-logo?text=${encodeURIComponent(text)}`;
+        await conn.sendMessage(jid, { image: { url: imgUrl }, caption: '🎮 *Gaming Logo*' }, { quoted: m });
     }
 };
 

@@ -45,7 +45,7 @@ function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0, metrics = {}) 
 ┃ 👥 𝗨𝘀𝗲𝗿𝘀: ${userCount} Active (𝗿𝗲𝗮𝗹-𝘁𝗶𝗺𝗲)
 ┃ 🤖 𝗕𝗼𝘁𝘀 𝗖𝗼𝗻𝗻𝗲𝗰𝘁𝗲𝗱: ${activeBots} 𝗟𝗶𝘃𝗲
 ┃ 📱 𝗗𝗲𝘃𝗶𝗰𝗲: ANDROID-CORE
-┃ 🧠 RAM: ${randomRam}/128 MB
+	┃ 🧠 RAM: ${randomRam}/128 GB
 ╰━━━━━━━━━━━━━━━━━━╯
 `;
 }
