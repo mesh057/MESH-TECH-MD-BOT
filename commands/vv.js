@@ -1,52 +1,82 @@
-const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
-function unwrapMessageContent(message) {
-    let content = message;
-    // WhatsApp can nest view-once media inside ephemeral and view-once wrappers.
-    for (let i = 0; i < 5 && content; i += 1) {
-        const wrapped = content.ephemeralMessage ||
-            content.viewOnceMessageV2Extension ||
-            content.viewOnceMessageV2 ||
-            content.viewOnceMessage;
-        if (!wrapped?.message) break;
-        content = wrapped.message;
-    }
-    return content;
+/**
+ * Recursively unwraps WhatsApp message wrappers to find the core content.
+ * Handles ephemeral, view-once v2, and extension wrappers.
+ */
+function unwrapViewOnce(message) {
+    if (!message) return null;
+    let m = message;
+
+    // Handle Ephemeral (disappearing messages) wrapper
+    if (m.ephemeralMessage?.message) m = m.ephemeralMessage.message;
+
+    // Handle View Once wrappers
+    if (m.viewOnceMessage?.message) return m.viewOnceMessage.message;
+    if (m.viewOnceMessageV2?.message) return m.viewOnceMessageV2.message;
+    if (m.viewOnceMessageV2Extension?.message) return m.viewOnceMessageV2Extension.message;
+
+    return m;
+}
+
+/**
+ * Extracts View Once media from a quoted message context.
+ */
+function getQuotedViewOnce(msg) {
+    const content = msg.message?.ephemeralMessage?.message || 
+                  msg.message?.viewOnceMessage?.message || 
+                  msg.message?.viewOnceMessageV2?.message || 
+                  msg.message;
+                  
+    const ctx = content?.extendedTextMessage?.contextInfo;
+    const quoted = ctx?.quotedMessage;
+    if (!quoted) return null;
+
+    const unwrapped = unwrapViewOnce(quoted);
+    if (!unwrapped) return null;
+
+    if (unwrapped.imageMessage) return { type: 'image', message: unwrapped.imageMessage };
+    if (unwrapped.videoMessage) return { type: 'video', message: unwrapped.videoMessage };
+    if (unwrapped.audioMessage) return { type: 'audio', message: unwrapped.audioMessage };
+    if (unwrapped.documentMessage) return { type: 'document', message: unwrapped.documentMessage };
+    
+    return null;
 }
 
 async function vvCommand(sock, from, msg) {
-    // Loading reactions should never prevent the media from being opened.
-    const loadEmojis = ['⏳', '🔓', '👁️'];
-    for (const emoji of loadEmojis) {
-        await sock.sendMessage(from, { react: { text: emoji, key: msg.key } }).catch(() => {});
+    const found = getQuotedViewOnce(msg);
+    
+    if (!found) {
+        return await sock.sendMessage(from, { text: '❌ Please reply to a View Once photo, video, or audio with *.vv*' }, { quoted: msg });
     }
 
-    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage ||
-        msg.message?.ephemeralMessage?.message?.extendedTextMessage?.contextInfo?.quotedMessage ||
-        msg.message?.viewOnceMessage?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    if (!quoted) return await sock.sendMessage(from, { text: "❌ Please reply to a View-Once message." }, { quoted: msg });
+    // Visual feedback that the bot is processing
+    await sock.sendMessage(from, { react: { text: '🔓', key: msg.key } }).catch(() => {});
 
-    const message = unwrapMessageContent(quoted);
-    if (!message) return await sock.sendMessage(from, { text: "❌ The View-Once message could not be opened." }, { quoted: msg });
-    const mediaTypes = ['imageMessage', 'videoMessage', 'audioMessage', 'documentMessage'];
-    const vType = mediaTypes.find((type) => message[type]);
+    try {
+        const buffer = await downloadMediaMessage(
+            { message: { [`${found.type}Message`]: found.message } },
+            'buffer',
+            {}
+        );
 
-    if (vType) {
-        try {
-            const mediaType = vType.replace('Message', '');
-            const stream = await downloadContentFromMessage(message[vType], mediaType);
-            let buffer = Buffer.from([]);
-            for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-            
-            if (vType === 'imageMessage') await sock.sendMessage(from, { image: buffer, caption: "✅ View-Once Image Downloaded" }, { quoted: msg });
-            else if (vType === 'videoMessage') await sock.sendMessage(from, { video: buffer, caption: "✅ View-Once Video Downloaded" }, { quoted: msg });
-            else if (vType === 'audioMessage') await sock.sendMessage(from, { audio: buffer, mimetype: 'audio/mp4' }, { quoted: msg });
-            else if (vType === 'documentMessage') await sock.sendMessage(from, { document: buffer, mimetype: message[vType].mimetype || 'application/octet-stream', fileName: message[vType].fileName || 'view-once-file' }, { quoted: msg });
-        } catch (e) {
-            await sock.sendMessage(from, { text: "❌ Failed to download View-Once media." }, { quoted: msg });
+        const caption = found.message.caption || `✅ View-Once ${found.type.charAt(0).toUpperCase() + found.type.slice(1)} Recovered`;
+
+        if (found.type === 'image') {
+            await sock.sendMessage(from, { image: buffer, caption }, { quoted: msg });
+        } else if (found.type === 'video') {
+            await sock.sendMessage(from, { video: buffer, caption }, { quoted: msg });
+        } else if (found.type === 'audio') {
+            await sock.sendMessage(from, { audio: buffer, mimetype: 'audio/mp4' }, { quoted: msg });
+        } else if (found.type === 'document') {
+            await sock.sendMessage(from, { 
+                document: buffer, 
+                mimetype: found.message.mimetype || 'application/octet-stream', 
+                fileName: found.message.fileName || 'recovered-file' 
+            }, { quoted: msg });
         }
-    } else {
-        await sock.sendMessage(from, { text: "❌ Not a View-Once media message." }, { quoted: msg });
+    } catch (error) {
+        await sock.sendMessage(from, { text: `❌ Failed to retrieve View-Once media: ${error.message}` }, { quoted: msg });
     }
 }
 

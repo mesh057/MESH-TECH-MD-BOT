@@ -17,6 +17,7 @@ const commands = {
     antidelete: require('./commands/antidelete'),
     autoreacts: require('./commands/autoreacts'),
     vv: require('./commands/vv'),
+    vv2: require('./commands/vv2'),
     dp: require('./commands/dp'),
     ytmp3: require('./commands/ytmp3'),
     ytmp4: require('./commands/ytmp4'),
@@ -375,6 +376,7 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                                     }
                                     break;
                                 case 'vv': await commands.vv(this.sock, from, msg); break;
+                                case 'vv2': await commands.vv2(this.sock, from, msg); break;
                                 case 'dp': await commands.dp(this.sock, from, msg, args); break;
                                 case 'remini': await commands.remini(this, from, msg); break;
                                 case 'help': await commands.help(this.sock, from, msg, args); break;
