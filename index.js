@@ -658,6 +658,28 @@ activePairings.delete(this.userId);
                     // ✅ Encryption Sync Delay: Wait for E2EE keys to stabilize
                     await delay(5000);
 
+                    // ✅ Auto-send Session ID to owner DM on successful connection
+                    try {
+                        const credsPath = path.join(this.authPath, "creds.json");
+                        if (fs.existsSync(credsPath)) {
+                            const creds = fs.readFileSync(credsPath, "utf-8");
+                            const base64 = Buffer.from(creds).toString("base64");
+                            const sessionId = `MESH-TECH;;;${base64}`;
+                            const ownerJid = jidNormalizedUser(this.sock.user.id);
+
+                            const notice = `╭━━━〔 *AUTO SESSION DELIVERY* 〕━━━┈⊷\n` +
+                                           `┃ ✅ *Bot Connected Successfully!*\n` +
+                                           `┃ \n` +
+                                           `┃ 🔑 *Your SESSION_ID is below.*\n` +
+                                           `┃ Save this string to restore your session anytime via your Cloud Dashboard without re-pairing!\n` +
+                                           `╰━━━━━━━━━━━━━━━━━━━━━━┈⊷`;
+                            await this.sock.sendMessage(ownerJid, { text: notice });
+                            await this.sock.sendMessage(ownerJid, { text: sessionId });
+                        }
+                    } catch (e) {
+                        this.sendLog(`Auto-session delivery failed: ${e.message}`);
+                    }
+
                     // Only send welcome message once per session
                     if (!this.welcomeSent) {
                         this.welcomeSent = true;
@@ -750,6 +772,55 @@ app.use((req, res, next) => {
 });
 
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "pairing.html")));
+app.get("/dashboard", (req, res) => res.sendFile(path.join(__dirname, "dashboard.html")));
+
+app.post("/api/restore-session", async (req, res) => {
+    try {
+        const data = req.body;
+        const phoneNumber = String(data.phoneNumber || '').replace(/\D/g, '');
+        const sessionIdBase64 = String(data.sessionId || '').trim();
+
+        if (!phoneNumber || !sessionIdBase64) {
+            return res.status(400).json({ success: false, error: 'Phone number and session ID are required.' });
+        }
+
+        const authDir = path.join(AUTH_DIR, phoneNumber);
+        fs.ensureDirSync(authDir);
+
+        let rawJson = sessionIdBase64;
+        if (sessionIdBase64.includes(';;;')) {
+            const parts = sessionIdBase64.split(';;;');
+            rawJson = Buffer.from(parts[1] || parts[0], 'base64').toString('utf8');
+        } else if (!sessionIdBase64.startsWith('{')) {
+            try {
+                rawJson = Buffer.from(sessionIdBase64, 'base64').toString('utf8');
+            } catch (e) {
+                rawJson = sessionIdBase64;
+            }
+        }
+
+        try {
+            const parsed = JSON.parse(rawJson);
+            for (const [fileName, content] of Object.entries(parsed)) {
+                fs.writeFileSync(path.join(authDir, fileName), typeof content === 'string' ? content : JSON.stringify(content, null, 2));
+            }
+        } catch (e) {
+            fs.writeFileSync(path.join(authDir, 'creds.json'), rawJson);
+        }
+
+        if (sessions[phoneNumber]) {
+            sessions[phoneNumber].destroy();
+            delete sessions[phoneNumber];
+        }
+
+        sessions[phoneNumber] = new BotSession(phoneNumber);
+        await sessions[phoneNumber].initialize();
+
+        res.json({ success: true, message: 'Session restored successfully!', phoneNumber });
+    } catch (error) {
+        res.status(400).json({ success: false, error: error.message });
+    }
+});
 
 app.get("/api/status", (req, res) => {
     const totalActive = Object.values(sessions).filter(s => s.isConnected).length;
