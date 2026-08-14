@@ -150,6 +150,30 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
 
             this.sock.ev.on('creds.update', saveCreds);
 
+            // ✅ Initialize Settings from Environment Variables (Defaults for new users)
+            if (!botData.statusSettings[this.userId]) {
+                botData.statusSettings[this.userId] = {
+                    autoStatus: process.env.AUTO_STATUS_SEEN === 'true',
+                    autoLike: process.env.AUTO_STATUS_REACT === 'true',
+                    autoReply: process.env.AUTO_STATUS_REPLY === 'true',
+                    replyText: process.env.AUTO_STATUS_MSG || "*SEEN YOUR STATUS BY MESH-TECH-MD 🖤*"
+                };
+            }
+            if (!botData.presenceSettings[this.userId]) {
+                botData.presenceSettings[this.userId] = {
+                    alwaysOnline: process.env.ALWAYS_ONLINE === 'true',
+                    fakeTyping: process.env.AUTO_TYPING === 'true',
+                    fakeRecording: process.env.AUTO_RECORDING === 'true'
+                };
+            }
+            if (botData.antiDelete[this.userId] === undefined) {
+                botData.antiDelete[this.userId] = process.env.ANTI_DELETE === 'true';
+            }
+            if (botData.antiCall[this.userId] === undefined) {
+                botData.antiCall[this.userId] = process.env.ANTI_CALL === 'true';
+            }
+            saveBotData();
+
             this.sock.ev.on('group-participants.update', async (anu) => {
                 if (anu.action === 'add') await commands.welcome.handleJoinEvent(this.sock, anu.id, anu.participants).catch(() => {});
             });

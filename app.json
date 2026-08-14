@@ -1,0 +1,64 @@
+{
+  "name": "MESH-TECH-MD-BOT",
+  "description": "Multi-Session WhatsApp Automation Bot",
+  "logo": "https://i.postimg.cc/vHZz7VWG/bot-logo.png",
+  "repository": "https://github.com/mesh057/MESH-TECH-MD-BOT",
+  "keywords": ["whatsapp", "bot", "multi-session", "baileys"],
+  "env": {
+    "ANTI_DELETE": {
+      "description": "Set to 'true' to show deleted messages by default.",
+      "value": "true",
+      "required": false
+    },
+    "ALWAYS_ONLINE": {
+      "description": "Set to 'true' to stay online 24/7 by default.",
+      "value": "false",
+      "required": false
+    },
+    "AUTO_STATUS_SEEN": {
+      "description": "Set to 'true' for automatic status viewing.",
+      "value": "true",
+      "required": false
+    },
+    "AUTO_STATUS_REACT": {
+      "description": "Set to 'true' for automatic reaction on status.",
+      "value": "true",
+      "required": false
+    },
+    "AUTO_STATUS_REPLY": {
+      "description": "Set to 'true' for auto reply on status seen.",
+      "value": "false",
+      "required": false
+    },
+    "AUTO_STATUS_MSG": {
+      "description": "Custom message for status reply.",
+      "value": "*SEEN YOUR STATUS BY MESH-TECH-MD 🖤*",
+      "required": false
+    },
+    "ANTI_LINK": {
+      "description": "Set to 'true' to automatically remove group links by default.",
+      "value": "false",
+      "required": false
+    },
+    "AUTO_TYPING": {
+      "description": "Set to 'true' for automatic typing simulation by default.",
+      "value": "false",
+      "required": false
+    },
+    "AUTO_RECORDING": {
+      "description": "Set to 'true' for automatic recording simulation by default.",
+      "value": "false",
+      "required": false
+    },
+    "ANTI_CALL": {
+      "description": "Set to 'true' to automatically reject WhatsApp calls by default.",
+      "value": "false",
+      "required": false
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
