@@ -1,401 +1,111 @@
-// 📂 menu.js
-// 🌟 Full Stylish Global Menu — MESH-TECH MD BOT
+'use strict';
 
-const more = String.fromCharCode(8206)
-const readMore = more.repeat(2001)
-const moment = require('moment-timezone')
+const moment = require('moment-timezone');
+const ZERO_WIDTH = String.fromCharCode(8206);
+const READ_MORE = ZERO_WIDTH.repeat(2001);
+
+function getDateTime(timezone = 'Africa/Nairobi') {
+    const now = moment().tz(timezone);
+    const date = now.format('DD-MMM-YYYY').toUpperCase();
+    const time = now.format('hh:mm A');
+    const hour = now.hour();
+    
+    let greeting = '🌙 Good Night';
+    if (hour >= 5 && hour < 12) greeting = '🌅 Good Morning';
+    else if (hour >= 12 && hour < 17) greeting = '☀️ Good Afternoon';
+    else if (hour >= 17 && hour < 21) greeting = '🌆 Good Evening';
+    
+    return { date, time, greeting };
+}
 
 function getStatusBox(timezone = 'Africa/Nairobi', userCount = 0, metrics = {}) {
-    // Force Nairobi GMT+3
-    const date = moment().tz('Africa/Nairobi').format('DD-MMM-YYYY')
-    const time = moment().tz('Africa/Nairobi').format('hh:mm A')
-    const hour = moment().tz('Africa/Nairobi').hour()
+    const { date, time, greeting } = getDateTime(timezone);
+    const uptimeSec = process.uptime();
+    const hours = Math.floor(uptimeSec / 3600);
+    const minutes = Math.floor((uptimeSec % 3600) / 60);
+    const seconds = Math.floor(uptimeSec % 60);
+    const uptimeStr = `${hours}h ${minutes}m ${seconds}s`;
     
-    // Time-based greeting
-    let greeting = ''
-    if (hour >= 5 && hour < 12) greeting = '🌅 Good Morning'
-    else if (hour >= 12 && hour < 17) greeting = '☀️ Good Afternoon'
-    else if (hour >= 17 && hour < 21) greeting = '🌆 Good Evening'
-    else greeting = '🌙 Good Night'
-    
-    const uptimeSec = process.uptime()
-    const hours = Math.floor(uptimeSec / 3600)
-    const minutes = Math.floor((uptimeSec % 3600) / 60)
-    const seconds = Math.floor(uptimeSec % 60)
-    const uptimeStr = `${hours}h ${minutes}m ${seconds}s`
-    const commandsLoaded = Number.isFinite(metrics.commandsLoaded) ? metrics.commandsLoaded : 0
-    const menuCount = Number.isFinite(metrics.menuCount) ? metrics.menuCount : Object.keys(menuNames || {}).length
-    const activeBots = Number.isFinite(metrics.activeBots) ? metrics.activeBots : 0
-    const randomRam = Math.floor(Math.random() * (95 - 55 + 1)) + 55; // Random RAM between 55 and 95 out of 128 MB
+    const commandsLoaded = metrics.commandsLoaded || 0;
+    const activeBots = metrics.activeBots || 1;
+    const randomRam = Math.floor(Math.random() * (95 - 55 + 1)) + 55;
 
     return `
 ╭━━━ *𝗠𝗘𝗦𝗛-𝗧𝗘𝗖𝗛 𝗠𝗗 𝗕𝗢𝗧* ━━━╮
 ┃ ${greeting}
-┃ 🔥 𝗠𝗼𝗱𝗲: PUBLIC|FULL POWER 
+┃ 🔥 𝗠𝗼𝗱𝗲: PUBLIC|FULL POWER
 ┃ 💀 𝗣𝗿𝗼𝘁𝗼𝗰𝗼𝗹: PHANTOM CORE
-┃ 👑 𝗢𝘄𝗻𝗲𝗿: 𝕄𝔼𝕊ℍ 
-┃ ⚙️ 𝗩𝗲𝗿𝘀𝗶𝗼𝗻: v5.0.0 [MESH INFINITY RELEASE]
+┃ 👑 𝗢𝘄𝗻𝗲𝗿: 𝕄𝔼𝕊ℍ
+┃ 📞 𝗡𝘂𝗺𝗯𝗲𝗿: 254746844168
+┃ ⚙️ 𝗩𝗲𝗿𝘀𝗶𝗼𝗻: v2.4 [RESTORED CORE]
 ┃ ⏳ 𝗨𝗽𝘁𝗶𝗺𝗲: ${uptimeStr}
 ┃ 📅 𝗗𝗮𝘁𝗲: ${date}
 ┃ 🕒 𝗧𝗶𝗺𝗲: ${time}
 ┃ 📌 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀: ${commandsLoaded} 𝗟𝗼𝗮𝗱𝗲𝗱
-┃ 🧠 𝗠𝗲𝗻𝘂𝘀: ${menuCount} 𝗖𝗮𝘁𝗲𝗴𝗼𝗿𝗶𝗲𝘀
-┃ 👥 𝗨𝘀𝗲𝗿𝘀: ${userCount} Active
-┃ 🤖 𝗕𝗼𝘁𝘀: ${activeBots} Connected
+┃ 👥 𝗨𝘀𝗲𝗿𝘀: ${userCount} Active (𝗿𝗲𝗮𝗹-𝘁𝗶𝗺𝗲)
+┃ 🤖 𝗕𝗼𝘁𝘀 𝗖𝗼𝗻𝗻𝗲𝗰𝘁𝗲𝗱: ${activeBots} 𝗟𝗶𝘃𝗲
 ┃ 📱 𝗗𝗲𝘃𝗶𝗰𝗲: ANDROID-CORE
-┃ RAM: ${randomRam}/128 MB
+┃ 🧠 RAM: ${randomRam}/128 MB
 ╰━━━━━━━━━━━━━━━━━━╯
-`
+`;
+}
+
+const MARKERS = ['➊', '➋', '➌', '➍', '➎', '➏', '➐', '➑', '➒', '➓'];
+
+function numberedLine(index, command) {
+    return `║${MARKERS[index] || `${index + 1}.`} ⟿ .${command}`;
+}
+
+const CATEGORY_EMOJIS = {
+    OWNER: '👑', DOWNLOAD: '📥', AUTO: '🪼', AI: '⚡', GROUP: '👥',
+    GITHUB: '🪔', LOGO: '🎨', TOOLS: '☣️', GAMES: '🎮', ANIME: '🎌',
+    GENERAL: '✨', SYSTEM: '🌐', PROTECTION: '🛡️', SPORTS: '⚽'
+};
+
+function formatGroup(title, emoji, commands) {
+    const lines = commands.map((command, index) => numberedLine(index, command));
+    return `╔═❖•⊰ ${emoji} *${title} MENU* ⊱•❖═╗\n${lines.join('\n')}\n╚════════════════════╝`;
 }
 
 function getMenu(timezone = 'Africa/Nairobi', userCount = 0, metrics = {}) {
     const statusBox = getStatusBox(timezone, userCount, metrics);
-    return `
-${statusBox}
-╔═❖•⊰ *𝗠𝗲𝘀𝗵-𝗧𝗲𝗰𝗵 𝗠𝗱 𝗕𝗼𝘁* ⊱•❖═╗  
-║୧⍤⃝💐 𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗢𝘄𝗻𝗲𝗿𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗚𝗿𝗼𝘂𝗽𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗔𝘂𝘁𝗼𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗔𝗜𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗚𝗶𝘁𝗵𝘂𝗯𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗟𝗼𝗴𝗼𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗧𝗼𝗼𝗹𝘀𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗧𝗲𝘅𝘁𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗨𝘁𝗶𝗹𝗶𝘁𝘆𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗘𝘅𝗽𝗹𝗼𝗶𝘁𝘀𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗣𝗵𝗼𝘁𝗼𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗥𝗲𝗮𝗰𝘁𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗚𝗮𝗺𝗲𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗙𝘂𝗻𝗠𝗲𝗻𝘂  
-║୧⍤⃝💐 𝗔𝗻𝗶𝗺𝗲𝗠𝗲𝗻𝘂  
+    
+    // MD-BOT uses hardcoded categories to match the user's requirement for a "professional UI"
+    const groups = [
+        ['GENERAL', '✨', ['menu', 'help', 'ping', 'runtime', 'alive', 'repo', 'idcheck']],
+        ['OWNER', '👑', ['self', 'public', 'restart', 'shutdown', 'broadcast', 'save', 'join', 'leave']],
+        ['DOWNLOAD', '📥', ['video', 'song', 'play', 'tiktok', 'insta', 'fb', 'img', 'apk']],
+        ['AUTO', '🪼', ['status', 'antidelete', 'antilink', 'autostatus', 'alwaysonline', 'autotyping', 'autorecording']],
+        ['AI', '⚡', ['chatgpt', 'llama', 'deepseek', 'gemini', 'claude', 'imagine', 'remini']],
+        ['GROUP', '👥', ['kick', 'add', 'promote', 'demote', 'tagall', 'hidetag', 'welcome', 'warn']],
+        ['TOOLS', '☣️', ['sticker', 'toimg', 'trt', 'calc', 'weather', 'shorturl', 'vv']],
+        ['GAMES', '🎮', ['tictactoe', 'truth', 'dare', 'joke', 'fact', 'ship', 'hack']],
+        ['ANIME', '🎌', ['waifu', 'neko', 'shinobu', 'megumin', 'hug', 'kiss', 'slap', 'husbu']]
+    ];
+
+    const sections = groups.map(([title, emoji, cmds]) => formatGroup(title, emoji, cmds)).join('\n\n');
+
+    return `${statusBox}
+╔═❖•⊰ *𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗠𝗘𝗡𝗨* ⊱•❖═╗
+║୧⍤⃝💐 𝗔𝗹𝗹 𝗹𝗼𝗮𝗱𝗲𝗱 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀
 ╚═══════════════════╝
-${readMore}
+${READ_MORE}
+${sections}
 
-╔═❖•⊰👑 *𝐎𝐖𝐍𝐄𝐑 𝐌𝐄𝐍𝐔* ⊱•❖═╗
-║➊ ☞ 𝐒𝐞𝐥𝐟 🐦‍🔥
-║➋ ☞ 𝐏𝐮𝐛𝐥𝐢𝐜 🐦‍🔥
-║➌ ☞ 𝐁𝐥𝐨𝐜𝐤 🐦‍🔥
-║➍ ☞ 𝐍𝐢𝐜𝐞 🐦‍🔥
-║➎ ☞ 𝐑𝐞𝐩𝐨 🐦‍🔥
-║➏ ☞ 𝐑𝐞𝐬𝐭𝐚𝐫𝐭 🐦‍🔥
-║➐ ☞ 𝐒𝐡𝐮𝐭𝐝𝐨𝐰𝐧 🐦‍🔥
-║➑ ☞ 𝐒𝐞𝐭𝐛𝐢𝐨 🐦‍🔥
-║➒ ☞ 𝐒𝐞𝐭𝐧𝐚𝐦𝐞 
-║➓ ☞ 𝐒𝐞𝐭𝐩𝐩 🐦‍🔥
-║⓫ ☞ 𝐒𝐚𝐯𝐞 🐦‍🔥
-║⓬ ☞ 𝐉𝐨𝐢𝐧 🐦‍🔥
-║⓭ ☞ 𝐋𝐞𝐚𝐯𝐞 🐦‍🔥
-║⓮ ☞ 𝐃𝐞𝐥𝐚𝐲𝐦𝐬𝐠 🐦‍🔥
-║⓯ ☞ 𝐍𝐮𝐦𝐢𝐧𝐟𝐨 🐦‍🔥
-║⓰ ☞ 𝐃𝐞𝐥 🐦‍🔥
-║⓱ ☞ 𝐑𝐞𝐚𝐜𝐭𝐜𝐡 🐦‍🔥
-║⓲ ☞ 𝐈𝐝𝐜𝐡𝐞𝐜𝐤 🐦‍🔥
-╚════════════════╝
-${readMore}
-
-╔═❖•⊰ *𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃 𝐌𝐄𝐍𝐔* ⊱•❖═╗
-║➊ ⟿ 𝙑𝙞𝙙𝙚𝙤 ୧⍤⃝📷  
-║➋ ⟿ 𝙑𝙞𝙙𝙚𝙤𝟮 ୧⍤⃝📷  
-║➌ ⟿ 𝙈𝙚𝙙𝙞𝙖𝙁𝙞𝙧𝙚 ୧⍤⃝📷  
-║➍ ⟿ 𝙎𝙤𝙣𝙜 ୧⍤⃝📷  
-║➎ ⟿ 𝙎𝙤𝙣𝙜𝟮 ୧⍤⃝📷  
-║➏ ⟿ 𝙋𝙡𝙖𝙮 ୧⍤⃝📷  
-║➐ ⟿ 𝙂𝙞𝙩𝙘𝙡𝙤𝙣𝙚 ୧⍤⃝📷  
-║➑ ⟿ 𝙏𝙞𝙠𝙏𝙤𝙠 ୧⍤⃝📷  
-║➒ ⟿ 𝙄𝙣𝙨𝙩𝙖 ୧⍤⃝📷  
-║➓ ⟿ 𝙁𝘽 ୧⍤⃝📷  
-║⓫ ⟿ 𝙄𝙈𝙂 ୧⍤⃝📷  
-║⓬ ⟿ 𝘼𝙋𝙆 ୧⍤⃝📷  
-║⓭ ⟿ 𝙔𝙩𝙢𝙥𝟰 ୧⍤⃝📷  
-║⓮ ⟿ 𝙔𝙩𝙢𝙥𝟯 ୧⍤⃝📷  
-╚═════════════════╝
-${readMore}
-
-╔═❖•⊰ *𝐀𝐔𝐓𝐎 𝐌𝐄𝐍𝐔* ⊱•❖═╗
-║➊ ⟿ 𝘼𝙣𝙩𝙞𝙡𝙞𝙣𝙠 🪼  
-║➋ ⟿ 𝘼𝙣𝙩𝙞𝙡𝙞𝙣𝙠𝙞𝙘𝙠 🪼  
-║➌ ⟿ 𝘼𝙣𝙩𝙞𝙗𝙪𝙜 🪼  
-║➍ ⟿ 𝘼𝙣𝙩𝙞ｄｅｌｅｔｅ 🪼  
-║➎ ⟿ 𝘼ｕｔｏｓｔａｔｕｓ 🪼  
-║➏ ⟿ 𝘼ｕｔｏｒｅａｃｔ 🪼  
-║➐ ⟿ 𝘼ｕｔｏ𝙂ｒｅｅｔ 🪼  
-║➑ ⟿ 𝘼ｕｔｏ𝙏ｙｐｉｎｇ 🪼  
-║➒ ⟿ 𝘼ｕｔｏｒｅｃｏｒｄｉｎｇ 🪼  
-║➓ ⟿ 𝗔𝗹𝘄𝗮𝘆𝘀𝗼𝗻𝗹𝗶𝗻𝗲 🪼
-║⓫ ⟿ 𝗔𝘂𝘁𝗼𝗹𝗶𝗸𝗲𝘀𝘁𝗮𝘁𝘂𝘀 🪼
-║⓬ ⟿ 𝗔𝘂𝘁𝗼𝘃𝗶𝗲𝘄𝘀𝘁𝗮𝘁𝘂𝘀 🪼
-║⓭ ⟿ 𝗔𝘂𝘁𝗼𝗿𝗲𝗽𝗹𝘆𝘀𝘁𝗮𝘁𝘂𝘀 🪼
-╚═════════════════╝
-${readMore}
-
-╔═❖•⊰ ⚡ *𝐀𝐈 𝐌𝐄𝐍𝐔* ⊱•❖═╗
-║➊ ⟿ 𝘾𝙝𝙖𝙩𝙜𝙥𝙩 🥏  
-║➋ ⟿ 𝙇𝙇𝙖𝙢𝙖 🥏  
-║➌ ⟿ 𝘾𝙡𝙖𝙪𝙙𝙚 🥏  
-║➍ ⟿ 𝙈𝙞𝙨𝙩𝙧𝙖𝙡 🥏  
-║➎ ⟿ 𝙂𝙚𝙢𝙞𝙣𝙞 🥏
-║➏ ⟿ 𝘿𝙚𝙚𝙥𝙨𝙚𝙚𝙠 🥏
-║➐ ⟿ 𝘾𝙝ａｔｂｏｔ 🥏
-╚════════════════╝
-${readMore}
-
-╔═❖•⊰ 👥 *𝐆𝐑𝐎𝐔𝐏 𝐌𝐄𝐍𝐔* ⊱•❖═╗
-║➊ ⟿ 𝙆𝙞𝙘𝙠 ☚⍢⃝☚  
-║➋ ⟿ 𝘼ｄｄ ☚⍢⃝☚  
-║➌ ⟿ 𝙆𝙞𝙘ｋａ𝗹𝗹 ☚⍢⃝☚  
-║➍ ⟿ 𝙊ｐｅｎ ☚⍢⃝☚  
-║➎ ⟿ 𝘾ｌｏｓｅ ☚⍢⃝☚  
-║➏ ⟿ 𝙏ａｇａ𝗹𝗹 ☚⍢⃝☚  
-║➐ ⟿ 𝙏ａｇａ𝗱𝗺𝗶𝗻 ☚⍢⃝☚  
-║➑ ⟿ 𝙃𝗶𝗱𝗲𝘁𝗮𝗴 ☚⍢⃝☚  
-║➒ ⟿ 𝙇𝗶𝘀𝘁𝗮𝗰𝘁𝗶𝘃𝗲 ☚⍢⃝☚  
-║➓ ⟿ 𝘾𝗵𝗮𝗻𝗴𝗲𝗻𝗮𝗺𝗲 ☚⍢⃝☚  
-║⓫ ⟿ 𝘾𝗹𝗼𝘀𝗲𝘁𝗶𝗺𝗲 ☚⍢⃝☚  
-║⓬ ⟿ 𝙂𝗶𝗻𝗳𝗼 ☚⍢⃝☚  
-║⓭ ⟿ 𝙒𝗮𝗿𝗻 ☚⍢⃝☚  
-║⓮ ⟿ 𝙂𝗽𝗽 ☚⍢⃝☚  
-║⓯ ⟿ 𝙋𝗿𝗼𝗺𝗼𝘁𝗲 ☚⍢⃝☚  
-║⓰ ⟿ 𝘿𝗲𝗺𝗼𝘁𝗲 ☚⍢⃝☚  
-║⓱ ⟿ 𝙋𝗿𝗼𝗺𝗼𝘁𝗲ａ𝗹𝗹 ☚⍢⃝☚  
-║⓲ ⟿ 𝘿𝗲𝗺𝗼𝘁𝗲ａ𝗹𝗹 ☚⍢⃝☚  
-║⓳ ⟿ 𝘼𝗱𝗺𝗶𝗻𝗸𝗶𝗹𝗹 ☚⍢⃝☚  
-║⓴ ⟿ 𝙇𝗲𝗮𝘃𝗲 ☚⍢⃝☚  
-╚════════════════════╝
-${readMore}
-
-╔═❖•⊰ 💻 *𝐆𝐈𝐓𝐇𝐔𝐁 𝐌𝐄𝐍𝐔* ⊱•❖═╗
-║➊ ⟿ 𝙂𝙞𝙩𝙃𝙪𝙗 🪔  
-║➋ ⟿ 𝙂𝙞ｔｃｌｏｎｅ 🪔  
-║➌ ⟿ 𝙂ｉｔｒｅｐｏｓ 🪔  
-║➍ ⟿ 𝙂ｉｔｆｏｌｌｏｗｅ𝐫𝐬 🪔  
-║➎ ⟿ 𝙂ｉｔｓｔ𝐚𝐫𝐫ｅ𝐝 🪔  
-║➏ ⟿ 𝙂ｉｔｆｏｌｌｏｗ 🪔  
-╚═════════════════╝
-${readMore}
-
-╔═❖•⊰ 🎨 *𝐋𝐎𝐆𝐎 𝐌𝐄𝐍𝐔* ⊱•❖═╗
-║➊ ⟿ 𝙇ｏｇｏ ୧⍤⃝💐  
-║➋ ⟿ ｄ３ｃｏ𝗺𝗶𝗰 ୧⍤⃝💐  
-║➌ ⟿ 𝘿ｒａ𝗴𝗼𝗻𝗯𝗮𝗹𝗹 ୧⍤⃝💐  
-║➍ ⟿ 𝘿ｅａ𝗱ｐ𝗼𝗼𝗹 ୧⍤⃝💐  
-║➎ ⟿ 𝘽ｌａ𝗰𝗸𝗽𝗶𝗻𝗸 ୧⍤⃝💐  
-║➏ ⟿ 𝙉ｅ𝗼𝗻𝗹𝗶𝗴𝗵𝘁 ୧⍤⃝💐  
-║➐ ⟿ 𝘾ａｔ ୧⍤⃝💐  
-╚════════════╝
-${readMore}
-
-╔═❖•⊰ 🛠️ *𝐓𝐎𝐎𝐋𝐒 𝐌𝐄𝐍𝐔* ⊱•❖═╗
-║➊ ⟿ 𝙍ｅａｄｍｏｒｅ ☣  
-║➋ ⟿ 𝙉ｉ𝗰𝗲 ☣  
-║➌ ⟿ 𝙎ａｙ ☣  
-║➍ ⟿ 𝙏ＴＥ ☣  
-║➎ ⟿ 𝘾ａ𝗹𝗰 ☣  
-║➏ ⟿ 𝙋𝗼𝗹𝗹 ☣  
-║➐ ⟿ 𝙃ａ𝗰𝗸 ☣  
-║➑ ⟿ 𝙈ａ𝘁𝗿𝗶𝘅 ☣  
-║➒ ⟿ 𝙁ａ𝗻𝗰𝐲 ☣  
-║➓ ⟿ 𝘾ｐｐ ☣  
-║⓫ ⟿ 𝙄𝗻𝘀𝘂𝗹𝘁 ☣  
-║⓬ ⟿ 𝙃ａ𝗿𝗮𝗺𝗶 ☣  
-║⓭ ⟿ 𝙎ｈａ𝗽ａｒ ☣  
-║⓮ ⟿ 𝙃ｅａ𝗿𝘁 ☣  
-║⓯ ⟿ 𝘾𝗵𝗲𝗰𝗸𝗺𝗲 ☣  
-╚═══════════════╝
-${readMore}
-
-╔═❖•⊰ ✍️ *𝐓𝐄𝐗𝐓 𝐄𝐅𝐅𝐄𝐂𝐓* ⊱•❖═╗
-║➊ ⟿ 𝙁ｌ𝗶𝗽𝘁𝗲𝘅𝘁 ✏  
-║➋ ⟿ 𝙎𝗺𝗮𝗹𝗹𝗰𝗮𝗽𝘀 ✏  
-║➌ ⟿ 𝙕ａ𝗹𝗴𝗼 ✏  
-║➍ ⟿ 𝙕ａ𝗹𝗴𝗼2 ✏  
-║➎ ⟿ 𝘽𝘂𝗯𝗯𝗹𝗲 ✏  
-║➏ ⟿ 𝙎𝘁𝗿𝗶𝗸𝗲 ✏  
-║➐ ⟿ 𝙍ｅｖｅｒｓｅ ✏  
-║⑻ ⟿ 𝙈𝗶𝗿𝗿ｏｒ ✏  
-║➒ ⟿ 𝘼𝗻𝗶𝗺𝗮𝗹 ✏  
-║➓ ⟿ 𝙏ＴＥ ✏  
-╚════════════════╝
-${readMore}
-
-╔═❖•⊰ ⚙️ *𝗨𝗧𝗜𝗟𝗜𝗧𝗬 𝗠𝗘𝗡𝗨* ⊱•❖═╗
-║➊ ⟿ 𝗣𝗶𝗻𝗴 🔮  
-║➋ ⟿ 𝗔𝗹𝗶𝘃𝗲 🔮  
-║➌ ⟿ 𝗥𝘂𝗻𝘁𝗶𝗺𝗲 🔮  
-║➍ ⟿ 𝗢ｗｎ𝗲𝗿 🔮  
-║➎ ⟿ 𝗕𝗼𝘁𝗻𝗮𝗺𝗲 🔮  
-║➏ ⟿ 𝗜𝗻𝘁𝗿𝗼 🔮  
-║➐ ⟿ 𝗖𝗵𝗮𝗻𝗻𝗲𝗹 🔮  
-║➑ ⟿ 𝗜𝗻𝗳𝗼 🔮  
-║➒ ⟿ 𝗛𝗲𝗹𝗽 🔮  
-╚═══════════════╝
-${readMore}
-
-╔═❖•⊰ *𝗘𝗫𝗣𝗟𝗢𝗜𝗧𝗦 𝗠𝗘𝗡𝗨* ⊱•❖═╗
-║➊ ⟿ 𝗫ｒａｙ 𓄀  
-║➋ ⟿ 𝗗𝗶𝘀𝗸 𓄀  
-║➌ ⟿ 𝗚ｈ𝗼ｓ𝘁ｐｉｎｇ 𓄀  
-║➍ ⟿ 𝗥ｏｏｔｍｅ 𓄀  
-║➎ ⟿ 𝗡ｕｍｉｎｆｏ 𓄀  
-║➏ ⟿ 𝗔ｄｍ𝗶𝗻ｋｉ𝗹𝗹 𓄀  
-║➐ ⟿ 𝗪ｅａｔｈｅｒ 𓄀  
-╚════════════════╝
-
-${readMore}
-
-╔═❖•⊰ 🖼️ *𝗣𝗛𝗢𝗧𝗢 𝗠𝗘𝗡𝗨* ⊱•❖═╗
-║➊ ⟿ 𝗔ｒｔ ୧⍤⃝💐  
-║➋ ⟿ 𝗪ａｌｌｐａｐｅｒ ୧⍤⃝💐  
-║➌ ⟿ 𝗚ａｍｅｗａｌｌｐａｐｅｒ ୧⍤⃝💐  
-║➍ ⟿ 𝗖ｙｂｅｒ ୧⍤⃝💐  
-║➎ ⟿ 𝗚ｒｅ𝗺𝗼ｒｙ ୧⍤⃝💐  
-║➏ ⟿ 𝗛ａ𝗰𝗸ｅｒ ୧⍤⃝💐  
-║➐ ⟿ 𝗛ｅｓｔｉａ ୧⍤⃝💐  
-║➑ ⟿ 𝗝ｉ𝗯ｒ𝗶𝗹 ୧⍤⃝💐  
-║➒ ⟿ 𝗥ｏｓ𝗲 ୧⍤⃝💐  
-║➓ ⟿ 𝗧𝗲𝗰𝗵ｎｏｌｏｇｙ ୧⍤⃝💐  
-║⓫ ⟿ 𝗣ｕ𝗯ｇ ୧⍤⃝💐  
-║⓬ ⟿ 𝗙ｒｅｅＦｉｒｅ ୧⍤⃝💐  
-║⓭ ⟿ Ｍｏｕｎｔａｉｎ ୧⍤⃝💐  
-║⓮ ⟿ 𝗜ｓｌａｍｉ𝗰 ୧⍤⃝💐  
-║⓯ ⟿ 𝗗ｏｇ ୧⍤⃝💐  
-║⓰ ⟿ 𝗜ｍｇｃａｔ ୧⍤⃝💐  
-╚════════════════╝
-${readMore}
-
-╔═❖•⊰ 💫 *𝗥𝗘𝗔𝗖𝗧 𝗠𝗘𝗡𝗨* ⊱•❖═╗
-║➊ ⟿ 𝗞ｉｌｌ 🪅  
-║➋ ⟿ 𝗣ａｔ 🪅  
-║➌ ⟿ 𝗖ｒｙ 🪅  
-║➍ ⟿ 𝗛ｕｇ 🪅  
-║➎ ⟿ 𝗞ｉｓｓ 🪅  
-║➏ ⟿ 𝗦ｌａｐ 🪅  
-║➐ ⟿ 𝗦ａｄ 🪅  
-║➑ ⟿ 𝗕ｉｔｅ 🪅  
-║➒ ⟿ 𝗕ａｋａ 🪅  
-║➓ ⟿ 𝗦ｍｉｌｅ 🪅  
-║⓫ ⟿ 𝗟ｏｖｅ 🪅 
-╚════════════════╝
-${readMore}
-
-╔═❖•⊰ 🎮 *𝗚𝗔𝗠𝗘 𝗠𝗘𝗡𝗨* ⊱•❖═╗  
-║➊ ⟿ 𝗧𝗶𝗰ｔａ𝗰ｔｏｅ ⛟  
-║➋ ⟿ Ｒｐｓ ⛟  
-║➌ ⟿ Ｆｌａｇ ⛟  
-║➍ ⟿ Ｍａｔｈ ⛟  
-║➎ ⟿ Ｇｕｅｓｓｎｕｍｂｅ𝐫 ⛟  
-║➏ ⟿ 𝗦𝗰ｒａ𝗺ｂｌｅ ⛟  
-║➐ ⟿ Ｒｉｄｄｌｅ ⛟  
-║➑ ⟿ Ｅｍｏｊｉ ⛟  
-╚═══════════════╝
-${readMore}
-
-
-╔═❖•⊰ 🎉 *𝗙𝗨𝗡 𝗠𝗘𝗡𝗨* ⊱•❖═╗  
-║➊ ⟿ Ｊｏｋｅ ⛃  
-║➋ ⟿ Ｍｅｍｅ ⛃  
-║➌ ⟿ 𝗔ｎｉｍｅ ⛃  
-║➍ ⟿ 𝗤ｕｏｔｅ ⛃  
-║➎ ⟿ Ｔｒｕｔｈｏｒｄａｒｅ ⛃  
-║➏ ⟿ ＥｉｇｈｔＢａｌｌ ⛃  
-║➐ ⟿ 𝗥ｏａ𝘀𝘁 ⛃  
-║➑ ⟿ Ｆａｃｔ ⛃  
-║➒ ⟿ Ｈｉｓｔｏｒｙｆａｃｔ ⛃  
-║➓ ⟿ Ｃａｐｔｉｏｎｓ ⛃  
-║⓫ ⟿ Ｔｒｉｖｉａ ⛃  
-╚═════════════════╝
-${readMore}
-
-╔═❖•⊰ 🎎 *𝗔𝗡𝗜𝗠𝗘 𝗠𝗘𝗡𝗨* ⊱•❖═╗  
-║➊ ⟿ 𝗪ａｉｆｕ 🌸  
-║➋ ⟿ Ｎｅｋｏ 🌸  
-║➌ ⟿ Ｎｅｋｏ２ 🌸  
-║➍ ⟿ Ａｋｉｙａ𝗺ａ 🌸  
-║➎ ⟿ Ａｓｕｎａ 🌸  
-║➏ ⟿ Ａｙｕｚａｗａ 🌸  
-║➐ ⟿ Ｂｏｒｕｔｏ 🌸  
-║➑ ⟿ Ａｎａ 🌸  
-║➒ ⟿ Ａｒｔ 🌸  
-║➓ ⟿ ＢＴＳ 🌸  
-║⓫ ⟿ Ｃａｒｔｏｏ𝗻 🌸  
-║⓬ ⟿ Ｃｈｉｈｏ 🌸  
-║⓭ ⟿ Ｃｈｉｔｏｇｅ 🌸  
-║⓮ ⟿ Ｃｏｓｐｌａｙ 🌸  
-║⓯ ⟿ Ｃｏｓｐｌａｙｌｏｌｉ 🌸  
-║⓰ ⟿ Ｃｏｓｐｌａｙｓａｇｉｒｉ 🌸  
-║⓱ ⟿ Ｃｙｂｅｒ 🌸  
-║⓲ ⟿ Ｄｅｉｄａｒａ 🌸  
-║⓳ ⟿ Ｄｏｒａｅｍｏｎ 🌸  
-║⓴ ⟿ Ｅｌａｉｎａ 🌸  
-║㉑ ⟿ Ｅｍｉｌｉａ 🌸  
-║㉒ ⟿ Ｅｒｚａ 🌸  
-║㉓ ⟿ Ｅｘｏ 🌸  
-║㉔ ⟿ Ｇａｍｅｗａｌｌｐａｐｅｒ 🌸  
-║㉕ ⟿ Ｈｉｎａｔａ 🌸  
-║㉖ ⟿ Ｈｕｓｂｕ 🌸  
-║㉗ ⟿ 𝗜ｔａｃｈｉ 🌸  
-║㉘ ⟿ 𝗜ｔａｃｈｉｕｃ𝗵𝗶𝗵ａ 🌸  
-║㉙ ⟿ 𝗜ｔｏｒｉ 🌸  
-║㉚ ⟿ Ｊｓｊ 🌸  
-║㉛ ⟿ 𝗠ｉ𝗸ａｓａ 🌸  
-║㉜ ⟿ Ｎｅｚｕｋｏ 🌸  
-║㉝ ⟿ Ｙｕｍｅｋｏ 🌸  
-║㉞ ⟿ 𝗭ｅｒｏｔｗｏ 🌸  
-║㉟ ⟿ 𝗞𝗶𝘁𝘀ｕｎｅ 🌸  
-║㊱ ⟿ 𝗞𝘂ｒ𝘂𝗺ｉ 🌸  
-║㊲ ⟿ 𝗕ｌ𝘂ｓｈ 🌸  
-║㊳ ⟿ Ｒｅｍ 🌸  
-║㊴ ⟿ 𝗔ｎｉｍｅｈｕｇ 🌸  
-║㊵ ⟿ 𝗔ｎｉｍ𝗲ｋｉ𝘀ｓ 🌸  
-║㊶ ⟿ Ｃｕｄｄｌｅ 🌸  
-║㊷ ⟿ 𝗔ｎｉ𝗺𝗲ｇｉｒｌ 🌸  
-║㊸ ⟿ 𝗦𝗵ｉｎｏ𝗯ｕ 🌸  
-║㊹ ⟿ Ｍｅｇ𝘂𝗺ｉｎ 🌸  
-║㊺ ⟿ Ｌｕｆ𝗳ｙ 🌸  
-╚═════════════════╝
-${readMore}
-
-╔═❖•⊰ 💐 *𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗘𝗠𝗢𝗝𝗜 𝗟𝗘𝗚𝗘𝗡𝗗* ⊱•❖═╗
-║୧⍤⃝💐 𝗠𝗲𝗻𝘂 𝗮𝗻𝗱 𝗹𝗼𝗴𝗼 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀
-║🐦‍🔥 𝗢𝘄𝗻𝗲𝗿 𝗮𝗻𝗱 𝗽𝗼𝘄𝗲𝗿 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀
-║📷 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱 𝗮𝗻𝗱 𝗺𝗲𝗱𝗶𝗮 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀
-║🪼 𝗔𝘂𝘁𝗼 𝗮𝗻𝗱 𝘀𝘁𝗮𝘁𝘂𝘀 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀
-║🥏 𝗔𝗜 𝗮𝗻𝗱 𝗰𝗵𝗮𝘁𝗯𝗼𝘁 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀
-║☚⍢⃝☚ 𝗚𝗿𝗼𝘂𝗽 𝗮𝗱𝗺𝗶𝗻 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀
-║🪔 𝗚𝗶𝘁𝗵𝘂𝗯 𝗮𝗻𝗱 𝗿𝗲𝗽𝗼𝘀𝗶𝘁𝗼𝗿𝘆 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀
-║☣ 𝗧𝗼𝗼𝗹𝘀 𝗮𝗻𝗱 𝘂𝘁𝗶𝗹𝗶𝘁𝘆 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀
-║✏ 𝗧𝗲𝘅𝘁 𝗲𝗳𝗳𝗲𝗰𝘁 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀
-║🌸 𝗔𝗻𝗶𝗺𝗲 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀
-╚════════════════════════════╝
-
-*『𝙄𝙛 𝙮𝙤𝙪 𝙘𝙖𝙣'𝙩 𝙝𝙖𝙣𝙙𝙡𝙚 𝙩𝙝𝙚 𝙝𝙚𝙖𝙩... 𝙙𝙤𝙣'𝙩 𝙩𝙤𝙪𝙘𝙝 𝙩𝙝𝙚 𝙛𝙞𝙧𝙚. 🔥*
-*𝙎𝙞𝙜𝙣𝙞𝙣𝙜 𝙤𝙛𝙛 𝙬𝙞𝙩𝙝 𝙖 𝙗𝙪𝗿𝗻... 𝙩𝙝𝙞𝙨 𝙞𝙨 𝗠𝗘𝗦𝗛. 🚀』* 
-${readMore} 
-*Fork this repo:* https://github.com/mesh057/MESH-TECH-MD-BOT/fork
-*Official Repo:* https://github.com/mesh057/MESH-TECH-MD-BOT
-`
+*『 𝗠𝗘𝗦𝗛-𝗧𝗘𝗖𝗛 𝗠𝗗 』*
+`;
 }
 
-// Map submenus to their names
 const menuNames = {
     menu: 'menu',
-    ownermenu: 'OwnerMenu',
-    downloadmenu: 'DownloadMenu',
-    groupmenu: 'GroupMenu',
-    automenu: 'AutoMenu',
-    aimenu: 'AIMenu',
-    githubmenu: 'GithubMenu',
-    logomenu: 'LogoMenu',
-    toolsmenu: 'ToolsMenu',
-    textmenu: 'TextMenu',
-    utilitymenu: 'UtilityMenu',
-    exploitsmenu: 'ExploitsMenu',
-    photomenu: 'PhotoMenu',
-    reactmenu: 'ReactMenu',
-    gamemenu: 'GameMenu',
-    funmenu: 'FunMenu',
-    animemenu: 'AnimeMenu'
+    ownermenu: 'OWNER',
+    downloadmenu: 'DOWNLOAD',
+    groupmenu: 'GROUP',
+    automenu: 'AUTO',
+    aimenu: 'AI',
+    toolsmenu: 'TOOLS',
+    gamemenu: 'GAMES',
+    animemenu: 'ANIME'
 };
 
 module.exports = { getMenu, getStatusBox, menuNames };
