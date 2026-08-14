@@ -598,6 +598,9 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     this.presenceTimer = null;
                     if (shouldReconnect && !this.isDestroyed) {
                         this.sendLog('Connection closed, reconnecting...');
+                        if (this.sock) {
+                            this.sock.ev.removeAllListeners();
+                        }
                         if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
                         this.reconnectTimer = setTimeout(() => this.initialize(), 5000);
                     }
@@ -857,6 +860,32 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('warning', (warning) => {
     console.warn('[System] Warning:', warning.name, warning.message);
 });
+
+// ✅ Graceful Shutdown handling
+const handleShutdown = async (signal) => {
+    console.log(`\n[System] 🛑 Received ${signal}. Shutting down gracefully...`);
+    releaseLock();
+    
+    // Close all active sessions
+    for (const userId in sessions) {
+        if (sessions[userId].sock) {
+            try {
+                sessions[userId].sock.end();
+            } catch (e) {}
+        }
+    }
+    
+    // Final data save
+    try {
+        fs.writeJsonSync(DATA_FILE, botData);
+        console.log('[System] ✅ Data saved successfully.');
+    } catch (e) {}
+    
+    process.exit(0);
+};
+
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+process.on('SIGINT', () => handleShutdown('SIGINT'));
 
 // Keep process alive
 setInterval(() => {}, 1000);
