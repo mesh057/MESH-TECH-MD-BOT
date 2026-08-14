@@ -1,6 +1,6 @@
 {
   "name": "mesh-tech-md-bot",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "WhatsApp Bot Rebuilt with Old Structure for Stability",
   "main": "index.js",
   "type": "commonjs",

@@ -499,8 +499,25 @@ async function loadExistingSessions() {
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, "public")));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Universal body parsing for maximum compatibility across different proxy environments
+app.use((req, res, next) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+        req.rawBody = data;
+        try {
+            if (req.headers['content-type']?.includes('application/json')) {
+                req.body = JSON.parse(data);
+            } else if (req.headers['content-type']?.includes('application/x-www-form-urlencoded')) {
+                const params = new URLSearchParams(data);
+                req.body = Object.fromEntries(params.entries());
+            }
+        } catch (e) {
+            req.body = {}; // Never throw "Bad Request" on parse failure
+        }
+        next();
+    });
+});
 
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "pairing.html")));
 
@@ -511,7 +528,13 @@ app.get("/api/status", (req, res) => {
 
 app.all("/api/request-pairing", async (req, res) => {
     try {
-        const raw = (req.body?.phoneNumber || req.query?.phoneNumber || '').toString();
+        // Universal parameter detection: Body -> Query -> Raw String -> Headers
+        let raw = (req.body?.phoneNumber || req.query?.phoneNumber || '').toString();
+        if (!raw && req.rawBody) {
+            const match = req.rawBody.match(/"phoneNumber":"?(\d+)"?/);
+            if (match) raw = match[1];
+        }
+        if (!raw) raw = req.headers['x-phone-number'] || '';
         const phoneNumber = raw.replace(/[^0-9]/g, '');
         if (!phoneNumber || phoneNumber.length < 8) {
             return res.status(400).json({ success: false, error: 'Enter a valid phone number with country code.' });
