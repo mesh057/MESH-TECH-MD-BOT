@@ -57,11 +57,15 @@ case "$1" in
         echo "📦 Updating dependencies..."
         npm install --no-audit --no-fund
         
-        # 3. Restart the bot (minimizes downtime)
+        # 3. Pre-emptive lock cleanup (prevents startup failure if PM2 kills process slowly)
+        echo "🧹 Cleaning up stale locks..."
+        rm -f tmp/bot.lock
+        
+        # 4. Restart the bot (minimizes downtime)
         echo "🚀 Restarting bot process..."
         pm2 restart "$BOT_NAME" || pm2 start index.js --name "$BOT_NAME"
         
-        # 4. Save state for server reboots
+        # 5. Save state for server reboots
         pm2 save
         
         echo "✅ Update complete! Bot is back online."

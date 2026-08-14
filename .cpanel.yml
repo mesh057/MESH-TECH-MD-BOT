@@ -1,6 +1,0 @@
----
-deployment:
-  tasks:
-    - export DEPLOYPATH=/home3/tunupublsh/MESH-TECH-MD-BOT/
-    - /bin/cp -R . $DEPLOYPATH
-    - cd $DEPLOYPATH && npm install --omit=dev

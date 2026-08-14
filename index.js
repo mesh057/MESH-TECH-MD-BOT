@@ -47,19 +47,47 @@ fs.ensureDirSync('./data');
 const LOCK_FILE = path.join(__dirname, 'tmp', 'bot.lock');
 if (!fs.existsSync(path.join(__dirname, 'tmp'))) fs.mkdirSync(path.join(__dirname, 'tmp'), { recursive: true });
 
-function acquireLock() {
+async function acquireLock() {
+    const maxRetries = 5;
+    const retryDelay = 2000; // 2 seconds
+
+    for (let i = 0; i < maxRetries; i++) {
+        if (fs.existsSync(LOCK_FILE)) {
+            const oldPid = parseInt(fs.readFileSync(LOCK_FILE, 'utf8').trim());
+            if (oldPid === process.pid) return; // Already locked by us
+
+            try {
+                process.kill(oldPid, 0);
+                // Process is still alive. Wait for it to shut down.
+                console.log(`[System] ⏳ Old instance (PID ${oldPid}) is still shutting down... (Attempt ${i + 1}/${maxRetries})`);
+                await delay(retryDelay);
+            } catch (e) {
+                // Process is dead. Stale lock.
+                console.warn(`[System] ⚠️ Stale lock found (PID ${oldPid}). Cleaning up.`);
+                try { fs.unlinkSync(LOCK_FILE); } catch (err) {}
+                break; // Proceed to acquire lock
+            }
+        } else {
+            break; // No lock file, proceed
+        }
+    }
+
+    // Final check
     if (fs.existsSync(LOCK_FILE)) {
         const oldPid = parseInt(fs.readFileSync(LOCK_FILE, 'utf8').trim());
         try {
             process.kill(oldPid, 0);
-            console.error(`[System] ❌ Another instance is already running (PID ${oldPid}). Exiting to prevent duplicates.`);
+            console.error(`[System] ❌ Another instance is still running (PID ${oldPid}). Exiting to prevent duplicate responses.`);
             process.exit(1);
-        } catch (e) {
-            console.warn(`[System] ⚠️ Stale lock found (PID ${oldPid}). Cleaning up.`);
-            fs.unlinkSync(LOCK_FILE);
-        }
+        } catch (e) {}
     }
-    fs.writeFileSync(LOCK_FILE, process.pid.toString());
+
+    try {
+        fs.writeFileSync(LOCK_FILE, process.pid.toString());
+        console.log(`[System] ✅ Lock acquired (PID ${process.pid})`);
+    } catch (e) {
+        console.error('[System] ❌ Failed to write lock file:', e.message);
+    }
 }
 
 function releaseLock() {
@@ -71,9 +99,11 @@ function releaseLock() {
     } catch (e) {}
 }
 
-    acquireLock();
+    // Startup initialization
+    (async () => {
+        await acquireLock();
 
-    let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, chatbot: {}, autoReacts: {}, presenceSettings: {} };
+        let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, chatbot: {}, autoReacts: {}, presenceSettings: {} };
     if (fs.existsSync(DATA_FILE)) {
         try { botData = fs.readJsonSync(DATA_FILE); } catch (e) {}
     }
@@ -790,7 +820,8 @@ app.get("/api/qr-code", (req, res) => {
 
 const server = app.listen(PORT, () => console.log(`🌐 Web Server running on port ${PORT}`));
 
-loadExistingSessions();
+        await loadExistingSessions();
+    })();
 
 // ✅ Graceful Shutdown
 async function shutdown(signal) {
