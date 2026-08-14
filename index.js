@@ -365,43 +365,50 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     const isStatus = from === 'status@broadcast' || from.endsWith('@broadcast');
                     if (isStatus) {
                         const settings = botData.statusSettings?.[this.userId];
-                        if (settings && settings.autoStatus) {
+                        if (settings) {
                             const statusAuthor = msg.key.participant || msg.participant;
                             const botJid = jidNormalizedUser(this.sock.user.id);
-                            
-                            // 1. Auto Seen (Always read status if autoStatus is on to ensure reaction works)
-                            if (settings.autoSeen || settings.autoLike) {
-                                await this.sock.readMessages([msg.key]).catch(() => {});
-                            }
+                            const isFromMe = msg.key.fromMe;
 
-                            // 2. Auto Like / React
-                            if (settings.autoLike && statusAuthor && statusAuthor !== botJid) {
-                                const statusJidList = [statusAuthor, botJid].map(jidNormalizedUser);
-                                const emojiList = ['❤️', '🔥', '🙌', '👏', '✨', '⚡', '🚀', '✅', '🌈', '💖'];
-                                const emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
-                                
-                                await this.sock.sendMessage('status@broadcast', {
-                                    react: { text: emoji, key: msg.key }
-                                }, { statusJidList }).catch((err) => {
-                                    this.sendLog(`Status reaction failed: ${err.message}`);
-                                });
-                            }
+                            if (statusAuthor) {
+                                // 1. Auto Seen (Always read status if any status feature is on)
+                                if (settings.autoStatus || settings.autoSeen || settings.autoLike || settings.autoReply || settings.autoDownload) {
+                                    await this.sock.readMessages([msg.key]).catch(() => {});
+                                }
 
-                            // 3. Auto Reply
-                            if (settings.autoReply && statusAuthor && statusAuthor !== botJid) {
-                                const replyText = settings.replyText || '❤️ Nice status!';
-                                const statusJidList = [statusAuthor, botJid].map(jidNormalizedUser);
-                                await this.sock.sendMessage('status@broadcast', { text: replyText }, { 
-                                    quoted: msg, 
-                                    statusJidList 
-                                }).catch((err) => {
-                                    this.sendLog(`Status reply failed: ${err.message}`);
-                                });
-                            }
+                                // 2. Auto Like / React
+                                if (settings.autoLike) {
+                                    const statusJidList = [jidNormalizedUser(statusAuthor), botJid];
+                                    const emojiList = ['❤️', '🔥', '🙌', '👏', '✨', '⚡', '🚀', '✅', '🌈', '💖'];
+                                    const emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+                                    
+                                    await this.sock.sendMessage('status@broadcast', {
+                                        react: { text: emoji, key: msg.key }
+                                    }, { statusJidList }).catch((err) => {
+                                        if (!err.message.includes('not-acceptable')) {
+                                            this.sendLog(`Status reaction failed: ${err.message}`);
+                                        }
+                                    });
+                                }
 
-                            // 4. Auto Download (Forward to owner)
-                            if (settings.autoDownload && statusAuthor !== botJid) {
-                                await this.sock.sendMessage(botJid, { forward: msg }).catch(() => {});
+                                // 3. Auto Reply
+                                if (settings.autoReply) {
+                                    const replyText = settings.replyText || '*SEEN YOUR STATUS BY MESH-TECH-MD 🖤*';
+                                    const statusJidList = [jidNormalizedUser(statusAuthor), botJid];
+                                    await this.sock.sendMessage('status@broadcast', { text: replyText }, { 
+                                        quoted: msg, 
+                                        statusJidList 
+                                    }).catch((err) => {
+                                        if (!err.message.includes('not-acceptable')) {
+                                            this.sendLog(`Status reply failed: ${err.message}`);
+                                        }
+                                    });
+                                }
+
+                                // 4. Auto Download (Forward to owner)
+                                if (settings.autoDownload) {
+                                    await this.sock.sendMessage(botJid, { forward: msg }).catch(() => {});
+                                }
                             }
                         }
                     }
