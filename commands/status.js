@@ -136,7 +136,7 @@ async function statusCommand(sock, from, msg, isAdmin, botData, saveBotData, use
         
         presence.alwaysOnline = target;
         saveBotData();
-        if (target !== 'off') {
+        if (target !== 'off' && sock?.user?.id) {
             await sock.sendPresenceUpdate('available').catch(() => {});
         }
         await sock.sendMessage(from, { text: `✅ *Always Online set to: ${target.toUpperCase()}*` }, { quoted: msg });

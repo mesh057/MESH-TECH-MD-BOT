@@ -1,8 +1,16 @@
 node_modules
 sessions
+auth_info
+auth_sessions
 data
 .env
+.env.*
+!.env.example
 .npm
 package-lock.json
 pnpm-lock.yaml
 *.log
+*.db
+*.sqlite
+*.sqlite3
+*.zip

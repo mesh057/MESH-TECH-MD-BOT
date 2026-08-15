@@ -39,10 +39,15 @@ const isOwner = require('./lib/isOwner');
 const { isAdmin: checkAdmin } = require('./lib/isAdmin');
 const { handleMenuCommand, getCommandMetrics } = require('./lib/menuHandler');
 
-const AUTH_DIR = './sessions';
-const DATA_FILE = './data/bot_data.json';
+const AUTH_DIR = path.resolve(process.env.MULTI_USER_AUTH_DIR || path.join(__dirname, 'sessions'));
+const DATA_FILE = path.resolve(process.env.MULTI_USER_DATA_FILE || path.join(__dirname, 'data', 'bot_data.json'));
+const maxInstancesSetting = String(process.env.MAX_BOT_INSTANCES || 'unlimited').trim().toLowerCase();
+const parsedMaxInstances = Number(maxInstancesSetting);
+const MAX_BOT_INSTANCES = ['unlimited', 'infinite', 'infinity', '0', '-1'].includes(maxInstancesSetting)
+    ? Infinity
+    : (Number.isFinite(parsedMaxInstances) && parsedMaxInstances > 0 ? Math.floor(parsedMaxInstances) : Infinity);
 fs.ensureDirSync(AUTH_DIR);
-fs.ensureDirSync('./data');
+fs.ensureDirSync(path.dirname(DATA_FILE));
 
 let botData = { antilinkGroups: {}, totalBots: 0, registeredBots: [], statusSettings: {}, antiDelete: {}, userNames: {}, antiCall: {}, chatbot: {}, autoReacts: {}, presenceSettings: {} };
 if (fs.existsSync(DATA_FILE)) {
@@ -127,6 +132,10 @@ function releaseLock() {
 const sessions = {};
 const pairingCooldowns = new Map();
 
+function hasSessionCapacity(userId) {
+    return Boolean(sessions[userId]) || Object.keys(sessions).length < MAX_BOT_INSTANCES;
+}
+
 // Tracks active pairing requests per user/phone number
 const activePairings = new Map();
 const activeQRs = new Map();
@@ -179,8 +188,12 @@ class BotSession {
 
     sendLog(message) { console.log(`[${this.userId}] ${message}`); }
 
+    isAuthenticated() {
+        return Boolean(this.isConnected && this.sock && this.sock.user && this.sock.user.id);
+    }
+
     async safeSendMessage(jid, content, options = {}) {
-        if (!this.isConnected || !this.sock) throw new Error("Connection Closed");
+        if (!this.isAuthenticated()) throw new Error("Connection Closed");
         
         // Auto-simulate typing before sending if enabled
         const presenceSettings = botData.presenceSettings?.[this.userId];
@@ -371,12 +384,13 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                     if (from !== 'status@broadcast' && (isTyping || isRecording)) {
                         setImmediate(async () => {
                             try {
+                                if (!this.isAuthenticated()) return;
                                 const presence = isRecording ? 'recording' : 'composing';
                                 // Start typing/recording
                                 await this.sock.sendPresenceUpdate(presence, from);
                                 // Stay in that state for a few seconds to look real
                                 setTimeout(async () => {
-                                    if (this.sock && this.isConnected) {
+                                    if (this.isAuthenticated()) {
                                         await this.sock.sendPresenceUpdate('paused', from).catch(() => {});
                                     }
                                 }, 4000);
@@ -657,6 +671,12 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                         this.reconnectTimer = setTimeout(() => this.initialize(), 5000);
                     }
                 } else if (connection === 'open') {
+                    if (!this.sock?.user?.id) {
+                        this.sendLog('Connection opened before WhatsApp identity was available; delaying session actions.');
+                        this.isConnected = false;
+                        this.isInitializing = false;
+                        return;
+                    }
                     this.isConnected = true;
                     this.isInitializing = false;
                     if (this.watchdogTimer) {
@@ -668,7 +688,7 @@ activePairings.set(this.userId, { code, error: null, requestedAt: Date.now() });
                         await this.sock.sendPresenceUpdate('available').catch(() => {});
                         clearInterval(this.presenceTimer);
                         this.presenceTimer = setInterval(() => {
-                            if (this.isConnected && this.sock && botData.presenceSettings?.[this.userId]?.alwaysOnline !== 'off') {
+                            if (this.isAuthenticated() && botData.presenceSettings?.[this.userId]?.alwaysOnline !== 'off') {
                                 this.sock.sendPresenceUpdate('available').catch(() => {});
                             }
                         }, 30000);
@@ -824,6 +844,10 @@ app.post("/api/restore-session", async (req, res) => {
             return res.status(400).json({ success: false, error: 'Phone number and session ID are required.' });
         }
 
+        if (!hasSessionCapacity(phoneNumber)) {
+            return res.status(429).json({ success: false, error: `Maximum active sessions reached (${MAX_BOT_INSTANCES}).` });
+        }
+
         // 1. First destroy existing session to prevent logout() from wiping new credentials
         if (sessions[phoneNumber]) {
             sessions[phoneNumber].destroy();
@@ -902,6 +926,9 @@ app.post("/api/request-pairing", async (req, res) => {
         pairingCooldowns.set(phoneNumber, now);
 
         const userId = phoneNumber;
+        if (!hasSessionCapacity(userId)) {
+            return res.status(429).json({ success: false, error: `Maximum active sessions reached (${MAX_BOT_INSTANCES}).` });
+        }
         if (sessions[userId]) {
             sessions[userId].destroy();
             delete sessions[userId];
@@ -952,6 +979,9 @@ app.post("/api/request-qr", async (req, res) => {
         const raw = (req.body?.phoneNumber || 'default_qr').toString();
         const userId = raw.replace(/[^0-9]/g, '') || 'default_qr';
 
+        if (!hasSessionCapacity(userId)) {
+            return res.status(429).json({ success: false, error: `Maximum active sessions reached (${MAX_BOT_INSTANCES}).` });
+        }
         if (sessions[userId]) {
             sessions[userId].destroy();
             delete sessions[userId];
